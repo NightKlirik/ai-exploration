@@ -28,7 +28,7 @@ public class PerplexityService {
         String url = config.getApiUrl() + "/chat/completions";
 
         PerplexityRequest request = PerplexityRequest.builder()
-                .model(model != null ? model : "llama-3.1-sonar-small-128k-online")
+                .model(model != null ? model : "sonar")
                 .messages(List.of(
                         PerplexityRequest.Message.builder()
                                 .role("user")
