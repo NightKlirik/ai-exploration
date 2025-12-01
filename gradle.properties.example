@@ -1,0 +1,8 @@
+# Gradle properties
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+org.gradle.parallel=true
+org.gradle.caching=true
+
+# Application properties
+# Set your Perplexity API key here for local development
+perplexityApiKey=your-api-key-here
