@@ -23,13 +23,14 @@ public class ChatController {
     public ResponseEntity<PerplexityResponse> chat(@RequestBody Map<String, String> request) {
         String message = request.get("message");
         String model = request.get("model");
+        String format = request.get("format");
 
         if (message == null || message.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            PerplexityResponse response = perplexityService.chat(message, model);
+            PerplexityResponse response = perplexityService.chat(message, model, format);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error on handle message: {}, error: {}", message, e.getMessage());

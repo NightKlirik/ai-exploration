@@ -201,6 +201,11 @@
                     <option value="sonar">Sonar</option>
                     <option value="sonar-reasoning">Reasoning</option>
                 </select>
+                <label for="format" style="margin-left: 20px;">Format: </label>
+                <select id="format">
+                    <option value="text">Text</option>
+                    <option value="json">JSON</option>
+                </select>
             </div>
         </div>
 
@@ -222,14 +227,70 @@
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
         const modelSelect = document.getElementById('model');
+        const formatSelect = document.getElementById('format');
 
-        function addMessage(content, isUser) {
+        function addMessage(content, isUser, shouldFormatJson = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
-            contentDiv.textContent = content;
+
+            // Try to format as JSON if requested and content looks like JSON
+            if (shouldFormatJson && !isUser) {
+                try {
+                    const jsonContent = JSON.parse(content);
+
+                    // Recursively process object to add indentation to multi-line strings
+                    function processObject(obj, level = 0) {
+                        if (typeof obj === 'string') {
+                            // Add proper indentation to multi-line strings
+                            if (obj.includes('\n')) {
+                                const indent = '  '.repeat(level + 1);
+                                return obj.split('\n').join('\n' + indent);
+                            }
+                            return obj;
+                        }
+
+                        if (Array.isArray(obj)) {
+                            return obj.map(item => processObject(item, level + 1));
+                        }
+
+                        if (obj !== null && typeof obj === 'object') {
+                            const result = {};
+                            for (const [key, value] of Object.entries(obj)) {
+                                result[key] = processObject(value, level + 1);
+                            }
+                            return result;
+                        }
+
+                        return obj;
+                    }
+
+                    const processedContent = processObject(jsonContent);
+                    let formattedJson = JSON.stringify(processedContent, null, 2);
+
+                    // Unescape special characters for better readability
+                    formattedJson = formattedJson.replace(/\\n/g, '\n')
+                                                 .replace(/\\t/g, '\t')
+                                                 .replace(/\\r/g, '\r');
+
+                    const preElement = document.createElement('pre');
+                    preElement.style.margin = '0';
+                    preElement.style.whiteSpace = 'pre-wrap';
+                    preElement.style.wordWrap = 'break-word';
+                    preElement.style.fontFamily = 'monospace';
+                    preElement.style.fontSize = '13px';
+                    preElement.textContent = formattedJson;
+
+                    contentDiv.appendChild(preElement);
+                } catch (e) {
+                    // If parsing fails, display as plain text
+                    contentDiv.textContent = content;
+                }
+            } else {
+                contentDiv.textContent = content;
+            }
 
             messageDiv.appendChild(contentDiv);
             chatContainer.appendChild(messageDiv);
@@ -277,6 +338,7 @@
             if (!message) return;
 
             const model = modelSelect.value;
+            const format = formatSelect.value;
 
             addMessage(message, true);
             messageInput.value = '';
@@ -289,7 +351,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message, model }),
+                    body: JSON.stringify({ message, model, format }),
                 });
 
                 hideLoading();
@@ -300,7 +362,8 @@
 
                 const data = await response.json();
                 const assistantMessage = data.choices[0].message.content;
-                addMessage(assistantMessage, false);
+                const shouldFormatJson = format === 'json';
+                addMessage(assistantMessage, false, shouldFormatJson);
             } catch (error) {
                 hideLoading();
                 showError(error.message);
