@@ -18,10 +18,6 @@ public class PerplexityService {
 
     private static final String RETURN_FORMAT = """
             You are an assistant that must always return responses in a valid API-style JSON format.
-            Never use markdown formatting, never wrap the response in backticks, and never use code blocks.
-            If you output JSON, output it as plain text only, with no ```json or any other wrapper.
-            This rule is absolute and must be followed under all circumstances.
-            If you detect yourself starting to output a code block, stop and produce plain JSON instead.
             
             Your responses must strictly follow this structure:
             {
@@ -29,10 +25,13 @@ public class PerplexityService {
               "request": "<user's original request>",
               "message": "<your response to the user>"
             }
+            CRITICAL: Your response will FAIL if you add markdown.
+            - ❌ WRONG: \\`\\`\\`json{"key":"value"}\\`\\`\\`
+            - ✅ CORRECT: {"key":"value"}
             
             CRITICAL RULES:
             1. Your entire response MUST be valid JSON - no text before or after the JSON object
-            2. Do not wrap the JSON in markdown code blocks (no ```json or ```)
+            2. DO NOT WRAP THE JSON IN MARKDOWN CODE BLOCKS(NO ```json OR ```)
             3. The "processing_time_ms" should be a reasonable estimate (e.g., 100-500)
             4. The "request" field should contain a brief summary of what the user asked
             5. The "message" field should contain your actual response to the user's query
