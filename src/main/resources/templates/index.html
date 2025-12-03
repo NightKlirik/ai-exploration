@@ -201,6 +201,11 @@
                     <option value="sonar">Sonar</option>
                     <option value="sonar-reasoning">Reasoning</option>
                 </select>
+                <label for="systemPromptType" style="margin-left: 20px;">System Prompt: </label>
+                <select id="systemPromptType" onchange="handleSystemPromptChange()">
+                    <option value="none">None</option>
+                    <option value="tz">Hiking Trip Planner</option>
+                </select>
                 <label for="format" style="margin-left: 20px;">Format: </label>
                 <select id="format">
                     <option value="text">Text</option>
@@ -228,6 +233,20 @@
         const sendButton = document.getElementById('sendButton');
         const modelSelect = document.getElementById('model');
         const formatSelect = document.getElementById('format');
+        const systemPromptTypeSelect = document.getElementById('systemPromptType');
+
+        async function handleSystemPromptChange() {
+            // Clear chat and server-side history when changing system prompt
+            chatContainer.innerHTML = '';
+            try {
+                await fetch('/api/chat/clear', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.error('Error clearing history:', error);
+            }
+        }
 
         function addMessage(content, isUser, shouldFormatJson = false) {
             const messageDiv = document.createElement('div');
@@ -339,6 +358,7 @@
 
             const model = modelSelect.value;
             const format = formatSelect.value;
+            const systemPromptType = systemPromptTypeSelect.value;
 
             addMessage(message, true);
             messageInput.value = '';
@@ -351,7 +371,8 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message, model, format }),
+                    credentials: 'include',
+                    body: JSON.stringify({ message, model, format, systemPromptType }),
                 });
 
                 hideLoading();
@@ -363,7 +384,38 @@
                 const data = await response.json();
                 const assistantMessage = data.choices[0].message.content;
                 const shouldFormatJson = format === 'json';
-                addMessage(assistantMessage, false, shouldFormatJson);
+
+                // Check if this is the final equipment list (for TZ prompt)
+                const equipmentListMarker = '### 🎒 СПИСОК СНАРЯЖЕНИЯ ДЛЯ ПОХОДА';
+                if (systemPromptType === 'tz' && assistantMessage.includes(equipmentListMarker)) {
+                    // Split message into dialogue part and equipment list
+                    const parts = assistantMessage.split(equipmentListMarker);
+
+                    // Show dialogue part if exists
+                    if (parts[0].trim()) {
+                        addMessage(parts[0].trim(), false, shouldFormatJson);
+                    }
+
+                    // Show equipment list as separate message
+                    const equipmentList = equipmentListMarker + parts[1];
+                    setTimeout(() => {
+                        addMessage(equipmentList, false, shouldFormatJson);
+
+                        // Show completion indicator
+                        setTimeout(() => {
+                            const completionDiv = document.createElement('div');
+                            completionDiv.style.textAlign = 'center';
+                            completionDiv.style.padding = '10px';
+                            completionDiv.style.color = '#667eea';
+                            completionDiv.style.fontWeight = 'bold';
+                            chatContainer.appendChild(completionDiv);
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        }, 500);
+                    }, 800);
+                } else {
+                    // Regular message
+                    addMessage(assistantMessage, false, shouldFormatJson);
+                }
             } catch (error) {
                 hideLoading();
                 showError(error.message);

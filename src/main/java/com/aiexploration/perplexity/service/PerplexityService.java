@@ -3,6 +3,7 @@ package com.aiexploration.perplexity.service;
 import com.aiexploration.perplexity.config.PerplexityConfig;
 import com.aiexploration.perplexity.model.PerplexityRequest;
 import com.aiexploration.perplexity.model.PerplexityResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -41,6 +43,55 @@ public class PerplexityService {
             Example response:
             {"processing_time_ms": 250, "request": "explain quantum physics", "message": "Quantum physics is the branch of physics that studies matter and energy at the atomic and subatomic levels..."}
             """;
+    private static final String TZ = """
+            # System Prompt: Походный Консультант
+            
+            ## Персонаж
+            Ты - опытный турист-походник 25-летним стажем. За плечами у тебя сотни походов: от простых выходных на природе до серьёзных горных экспедиций.
+            
+            ## Твоя задача
+            Через дружеский диалог собрать всю необходимую информацию о предстоящем походе и составить персонализированный список снаряжения.
+            
+            ### Запрещено:
+            ⛔ Задавать больше ОДНОГО вопроса в сообщении
+            ⛔ Давать советы, пока не собрана вся информация
+            ⛔ Рассказывать истории и байки до финала
+            ⛔ Отвлекаться от сбора информации
+            ⛔ Писать длинные сообщения — только вопрос и ничего лишнего
+            
+            ### Обязательно:
+            ✅ Каждое сообщение = ОДИН короткий вопрос
+            ✅ Никаких советов до финального списка
+            ✅ Строго следуй порядку вопросов
+            ✅ Максимум 5 вопросов
+            
+            ## Ключевые темы (выбери самые важные для конкретного случая)
+            - Тип и продолжительность похода
+            - Сезон
+            - Количество участников
+            - Ночёвка: палатка, домик или без ночёвки
+            - Питание: костёр, горелка, сухпаёк
+            
+            ## Формат результата
+            После получения ответов (или когда информации достаточно) выведи:
+            
+            ### 🎒 СПИСОК СНАРЯЖЕНИЯ ДЛЯ ПОХОДА
+            
+            **Обязательное:**
+            [список]
+            
+            **Одежда:**
+            [с учётом погоды]
+            
+            **Еда и вода:**
+            [рекомендации]
+            
+            **Аптечка:**
+            [базовый набор]
+
+            ## Начало
+            Поприветствуй, скажи, что поможешь подобрать снаряжение для похода. И задай первый вопрос — куда и на сколько собираются.
+            """;
 
     private final RestTemplate restTemplate;
     private final PerplexityConfig config;
@@ -50,20 +101,37 @@ public class PerplexityService {
         this.config = config;
     }
 
-    public PerplexityResponse chat(String userMessage, String model, String format) {
+    @SuppressWarnings("unchecked")
+    public PerplexityResponse chat(String userMessage, String model, String format, String systemPromptType, HttpSession session) {
         String url = config.getApiUrl() + "/chat/completions";
 
-        List<PerplexityRequest.Message> messages = new java.util.ArrayList<>();
+        List<PerplexityRequest.Message> messages = new ArrayList<>();
 
-        // Add system prompt only if JSON format is requested
-        if ("json".equalsIgnoreCase(format)) {
+        // Determine if we need to use history (for TZ prompt)
+        boolean useTZPrompt = "tz".equalsIgnoreCase(systemPromptType);
+
+        // Add system prompt based on type
+        if (useTZPrompt) {
+            messages.add(PerplexityRequest.Message.builder()
+                    .role("system")
+                    .content(TZ)
+                    .build());
+        } else if ("json".equalsIgnoreCase(format)) {
             messages.add(PerplexityRequest.Message.builder()
                     .role("system")
                     .content(RETURN_FORMAT)
                     .build());
         }
 
-        // Add user message
+        // Add conversation history from session if using TZ prompt
+        if (useTZPrompt) {
+            List<PerplexityRequest.Message> history = (List<PerplexityRequest.Message>) session.getAttribute("conversationHistory");
+            if (history != null) {
+                messages.addAll(history);
+            }
+        }
+
+        // Add current user message
         messages.add(PerplexityRequest.Message.builder()
                 .role("user")
                 .content(userMessage)
@@ -72,8 +140,8 @@ public class PerplexityService {
         PerplexityRequest request = PerplexityRequest.builder()
                 .model(model != null ? model : "sonar")
                 .messages(messages)
-                .maxTokens(1000)
-                .temperature(0.2)
+                .maxTokens(2000)
+                .temperature(0.7)
                 .topP(0.9)
                 .stream(false)
                 .build();
@@ -91,6 +159,37 @@ public class PerplexityService {
                 PerplexityResponse.class
         );
 
-        return response.getBody();
+        PerplexityResponse responseBody = response.getBody();
+
+        // Save history for TZ prompt
+        if (useTZPrompt && responseBody != null) {
+            List<PerplexityRequest.Message> history = (List<PerplexityRequest.Message>) session.getAttribute("conversationHistory");
+            if (history == null) {
+                history = new ArrayList<>();
+            }
+
+            // Add user message and assistant response to history
+            history.add(PerplexityRequest.Message.builder()
+                    .role("user")
+                    .content(userMessage)
+                    .build());
+
+            String assistantMessage = responseBody.getChoices().get(0).getMessage().getContent();
+            history.add(PerplexityRequest.Message.builder()
+                    .role("assistant")
+                    .content(assistantMessage)
+                    .build());
+
+            // Check if response contains completion marker
+            if (assistantMessage.contains("СПИСОК СНАРЯЖЕНИЯ ДЛЯ ПОХОДА")) {
+                // Clear history - conversation is complete
+                session.removeAttribute("conversationHistory");
+            } else {
+                // Save updated history
+                session.setAttribute("conversationHistory", history);
+            }
+        }
+
+        return responseBody;
     }
 }
