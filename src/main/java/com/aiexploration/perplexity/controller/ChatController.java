@@ -21,18 +21,20 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<PerplexityResponse> chat(@RequestBody Map<String, String> request, HttpSession session) {
-        String message = request.get("message");
-        String model = request.get("model");
-        String format = request.get("format");
-        String systemPromptType = request.get("systemPromptType");
+    public ResponseEntity<PerplexityResponse> chat(@RequestBody Map<String, Object> request, HttpSession session) {
+        String message = (String) request.get("message");
+        String model = (String) request.get("model");
+        String format = (String) request.get("format");
+        Double temperature = request.get("temperature") != null ? ((Number) request.get("temperature")).doubleValue() : null;
+        String systemPromptType = (String) request.get("systemPromptType");
+        String customSystemPrompt = (String) request.get("customSystemPrompt");
 
         if (message == null || message.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            PerplexityResponse response = perplexityService.chat(message, model, format, systemPromptType, session);
+            PerplexityResponse response = perplexityService.chat(message, model, format, temperature, systemPromptType, customSystemPrompt, session);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error on handle message: {}, error: {}", message, e.getMessage());

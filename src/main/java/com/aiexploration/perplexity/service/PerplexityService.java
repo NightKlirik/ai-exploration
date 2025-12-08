@@ -102,16 +102,22 @@ public class PerplexityService {
     }
 
     @SuppressWarnings("unchecked")
-    public PerplexityResponse chat(String userMessage, String model, String format, String systemPromptType, HttpSession session) {
+    public PerplexityResponse chat(String userMessage, String model, String format, Double temperature, String systemPromptType, String customSystemPrompt, HttpSession session) {
         String url = config.getApiUrl() + "/chat/completions";
 
         List<PerplexityRequest.Message> messages = new ArrayList<>();
 
-        // Determine if we need to use history (for TZ prompt)
+        // Determine if we need to use history (for TZ prompt or custom prompt)
         boolean useTZPrompt = "tz".equalsIgnoreCase(systemPromptType);
+        boolean useCustomPrompt = "custom".equalsIgnoreCase(systemPromptType) && customSystemPrompt != null && !customSystemPrompt.trim().isEmpty();
 
         // Add system prompt based on type
-        if (useTZPrompt) {
+        if (useCustomPrompt) {
+            messages.add(PerplexityRequest.Message.builder()
+                    .role("system")
+                    .content(customSystemPrompt)
+                    .build());
+        } else if (useTZPrompt) {
             messages.add(PerplexityRequest.Message.builder()
                     .role("system")
                     .content(TZ)
@@ -123,8 +129,8 @@ public class PerplexityService {
                     .build());
         }
 
-        // Add conversation history from session if using TZ prompt
-        if (useTZPrompt) {
+        // Add conversation history from session if using TZ prompt or custom prompt
+        if (useTZPrompt || useCustomPrompt) {
             List<PerplexityRequest.Message> history = (List<PerplexityRequest.Message>) session.getAttribute("conversationHistory");
             if (history != null) {
                 messages.addAll(history);
@@ -141,7 +147,7 @@ public class PerplexityService {
                 .model(model != null ? model : "sonar")
                 .messages(messages)
                 .maxTokens(2000)
-                .temperature(0.7)
+                .temperature(temperature != null ? temperature : 0.2)
                 .topP(0.9)
                 .stream(false)
                 .build();
@@ -161,8 +167,8 @@ public class PerplexityService {
 
         PerplexityResponse responseBody = response.getBody();
 
-        // Save history for TZ prompt
-        if (useTZPrompt && responseBody != null) {
+        // Save history for TZ prompt or custom prompt
+        if ((useTZPrompt || useCustomPrompt) && responseBody != null) {
             List<PerplexityRequest.Message> history = (List<PerplexityRequest.Message>) session.getAttribute("conversationHistory");
             if (history == null) {
                 history = new ArrayList<>();
@@ -180,8 +186,8 @@ public class PerplexityService {
                     .content(assistantMessage)
                     .build());
 
-            // Check if response contains completion marker
-            if (assistantMessage.contains("СПИСОК СНАРЯЖЕНИЯ ДЛЯ ПОХОДА")) {
+            // Check if response contains completion marker (only for TZ prompt)
+            if (useTZPrompt && assistantMessage.contains("СПИСОК СНАРЯЖЕНИЯ ДЛЯ ПОХОДА")) {
                 // Clear history - conversation is complete
                 session.removeAttribute("conversationHistory");
             } else {
