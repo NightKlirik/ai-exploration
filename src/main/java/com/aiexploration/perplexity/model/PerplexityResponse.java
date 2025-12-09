@@ -20,6 +20,9 @@ public class PerplexityResponse {
 
     private Usage usage;
 
+    @JsonProperty("execution_time_ms")
+    private Long executionTimeMs;
+
     @Data
     public static class Choice {
         private Integer index;

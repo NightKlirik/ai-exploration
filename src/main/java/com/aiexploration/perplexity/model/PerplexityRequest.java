@@ -28,6 +28,8 @@ public class PerplexityRequest {
 
     private Boolean stream;
 
+    private Parameters parameters;
+
     @Data
     @Builder
     @NoArgsConstructor
@@ -35,5 +37,13 @@ public class PerplexityRequest {
     public static class Message {
         private String role;
         private String content;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Parameters {
+        private Boolean details;
     }
 }

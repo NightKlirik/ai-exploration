@@ -1,14 +1,10 @@
 package com.aiexploration.perplexity.service;
 
-import com.aiexploration.perplexity.config.PerplexityConfig;
+import com.aiexploration.perplexity.config.AIConfig;
 import com.aiexploration.perplexity.model.PerplexityRequest;
 import com.aiexploration.perplexity.model.PerplexityResponse;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class PerplexityService {
+public class PerplexityService implements AIService {
 
     private static final String RETURN_FORMAT = """
             You are an assistant that must always return responses in a valid API-style JSON format.
@@ -94,16 +90,17 @@ public class PerplexityService {
             """;
 
     private final RestTemplate restTemplate;
-    private final PerplexityConfig config;
+    private final AIConfig config;
 
-    public PerplexityService(RestTemplate restTemplate, PerplexityConfig config) {
+    public PerplexityService(RestTemplate restTemplate, AIConfig config) {
         this.restTemplate = restTemplate;
         this.config = config;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public PerplexityResponse chat(String userMessage, String model, String format, Double temperature, String systemPromptType, String customSystemPrompt, HttpSession session) {
-        String url = config.getApiUrl() + "/chat/completions";
+        String url = config.getPerplexityApiUrl() + "/chat/completions";
 
         List<PerplexityRequest.Message> messages = new ArrayList<>();
 
@@ -150,13 +147,19 @@ public class PerplexityService {
                 .temperature(temperature != null ? temperature : 0.2)
                 .topP(0.9)
                 .stream(false)
+                .parameters(PerplexityRequest.Parameters.builder()
+                        .details(true)
+                        .build())
                 .build();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(config.getApiKey());
+        headers.setBearerAuth(config.getPerplexityApiKey());
 
         HttpEntity<PerplexityRequest> entity = new HttpEntity<>(request, headers);
+
+        // Measure execution time
+        long startTime = System.currentTimeMillis();
 
         ResponseEntity<PerplexityResponse> response = restTemplate.exchange(
                 url,
@@ -165,7 +168,14 @@ public class PerplexityService {
                 PerplexityResponse.class
         );
 
+        long executionTime = System.currentTimeMillis() - startTime;
+
         PerplexityResponse responseBody = response.getBody();
+
+        // Add execution time to response
+        if (responseBody != null) {
+            responseBody.setExecutionTimeMs(executionTime);
+        }
 
         // Save history for TZ prompt or custom prompt
         if ((useTZPrompt || useCustomPrompt) && responseBody != null) {

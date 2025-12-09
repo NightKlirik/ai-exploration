@@ -122,6 +122,13 @@
             overflow-x: auto;
         }
 
+        .execution-time {
+            font-size: 11px;
+            color: #888;
+            margin-top: 6px;
+            font-style: italic;
+        }
+
         .input-container {
             padding: 20px;
             background: white;
@@ -274,13 +281,22 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Perplexity AI Chat</h1>
+            <h1 id="headerTitle">AI Chat</h1>
             <div class="model-selector">
-                <label for="model">Model: </label>
-                <select id="model">
-                    <option value="sonar">Sonar</option>
-                    <option value="openai/gpt-4o">openai/gpt-4o</option>
+                <label for="provider">Provider: </label>
+                <select id="provider" onchange="handleProviderChange()">
+                    <option value="perplexity">Perplexity</option>
+                    <option value="huggingface">HuggingFace</option>
+                    <option value="openrouter">OpenRouter</option>
                 </select>
+                <label for="model" style="margin-left: 20px;">Model: </label>
+                <div id="modelContainer" style="display: inline;">
+                    <select id="modelSelect" style="display: inline;">
+                        <option value="sonar">Sonar</option>
+                        <option value="openai/gpt-4o">openai/gpt-4o</option>
+                    </select>
+                    <input type="text" id="modelInput" placeholder="Enter model name..." style="display: none; width: 200px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
+                </div>
                 <label for="systemPromptType" style="margin-left: 20px;">System Prompt: </label>
                 <select id="systemPromptType" onchange="handleSystemPromptChange()">
                     <option value="none">None</option>
@@ -319,12 +335,45 @@
         const chatContainer = document.getElementById('chatContainer');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
-        const modelSelect = document.getElementById('model');
+        const providerSelect = document.getElementById('provider');
+        const modelSelect = document.getElementById('modelSelect');
+        const modelInput = document.getElementById('modelInput');
         const formatSelect = document.getElementById('format');
         const temperatureInput = document.getElementById('temperature');
         const systemPromptTypeSelect = document.getElementById('systemPromptType');
         const customPromptContainer = document.getElementById('customPromptContainer');
         const customSystemPromptTextarea = document.getElementById('customSystemPrompt');
+        const headerTitle = document.getElementById('headerTitle');
+
+        function handleProviderChange() {
+            const provider = providerSelect.value;
+
+            // Update header title
+            const providerNames = {
+                'perplexity': 'Perplexity AI Chat',
+                'huggingface': 'HuggingFace Chat',
+                'openrouter': 'OpenRouter Chat'
+            };
+            headerTitle.textContent = providerNames[provider] || 'AI Chat';
+
+            // Switch between select and input based on provider
+            if (provider === 'perplexity') {
+                modelSelect.style.display = 'inline';
+                modelInput.style.display = 'none';
+            } else {
+                modelSelect.style.display = 'none';
+                modelInput.style.display = 'inline';
+
+                // Set default model suggestions as placeholder
+                if (provider === 'huggingface') {
+                    modelInput.placeholder = 'e.g., meta-llama/Llama-3.1-8B-Instruct';
+                    modelInput.value = 'meta-llama/Llama-3.1-8B-Instruct';
+                } else if (provider === 'openrouter') {
+                    modelInput.placeholder = 'e.g., anthropic/claude-3.5-sonnet';
+                    modelInput.value = 'anthropic/claude-3.5-sonnet';
+                }
+            }
+        }
 
         async function handleSystemPromptChange() {
             const selectedType = systemPromptTypeSelect.value;
@@ -338,11 +387,16 @@
         }
 
         async function clearHistory() {
+            const provider = providerSelect.value;
             chatContainer.innerHTML = '';
             try {
                 await fetch('/api/chat/clear', {
                     method: 'POST',
-                    credentials: 'include'
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ provider })
                 });
             } catch (error) {
                 console.error('Error clearing history:', error);
@@ -380,7 +434,7 @@
             return formatted;
         }
 
-        function addMessage(content, isUser, shouldFormatJson = false) {
+        function addMessage(content, isUser, shouldFormatJson = false, executionTime = null, totalTokens = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
 
@@ -449,6 +503,24 @@
             }
 
             messageDiv.appendChild(contentDiv);
+
+            // Add execution time and tokens for assistant messages
+            if (!isUser && (executionTime !== null || totalTokens !== null)) {
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'execution-time';
+
+                const parts = [];
+                if (executionTime !== null) {
+                    parts.push(`⏱️ ${executionTime}ms`);
+                }
+                if (totalTokens !== null) {
+                    parts.push(`🔢 ${totalTokens} tokens`);
+                }
+
+                metaDiv.textContent = parts.join(' • ');
+                contentDiv.appendChild(metaDiv);
+            }
+
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -493,7 +565,20 @@
             const message = messageInput.value.trim();
             if (!message) return;
 
-            const model = modelSelect.value;
+            const provider = providerSelect.value;
+
+            // Get model based on provider
+            let model;
+            if (provider === 'perplexity') {
+                model = modelSelect.value;
+            } else {
+                model = modelInput.value.trim();
+                if (!model) {
+                    showError('Please enter a model name');
+                    return;
+                }
+            }
+
             const format = formatSelect.value;
             const temperature = parseFloat(temperatureInput.value);
             const systemPromptType = systemPromptTypeSelect.value;
@@ -511,7 +596,7 @@
                         'Content-Type': 'application/json',
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ message, model, format, temperature, systemPromptType, customSystemPrompt }),
+                    body: JSON.stringify({ provider, message, model, format, temperature, systemPromptType, customSystemPrompt }),
                 });
 
                 hideLoading();
@@ -522,6 +607,8 @@
 
                 const data = await response.json();
                 const assistantMessage = data.choices[0].message.content;
+                const executionTime = data.execution_time_ms;
+                const totalTokens = data.usage ? data.usage.total_tokens : null;
                 const shouldFormatJson = format === 'json';
 
                 // Check if this is the final equipment list (for TZ prompt)
@@ -532,13 +619,13 @@
 
                     // Show dialogue part if exists
                     if (parts[0].trim()) {
-                        addMessage(parts[0].trim(), false, shouldFormatJson);
+                        addMessage(parts[0].trim(), false, shouldFormatJson, executionTime, totalTokens);
                     }
 
                     // Show equipment list as separate message
                     const equipmentList = equipmentListMarker + parts[1];
                     setTimeout(() => {
-                        addMessage(equipmentList, false, shouldFormatJson);
+                        addMessage(equipmentList, false, shouldFormatJson, null, null);
 
                         // Show completion indicator
                         setTimeout(() => {
@@ -553,7 +640,7 @@
                     }, 800);
                 } else {
                     // Regular message
-                    addMessage(assistantMessage, false, shouldFormatJson);
+                    addMessage(assistantMessage, false, shouldFormatJson, executionTime, totalTokens);
                 }
             } catch (error) {
                 hideLoading();
@@ -564,6 +651,8 @@
             }
         }
 
+        // Initialize provider UI on load
+        handleProviderChange();
         messageInput.focus();
     </script>
 </body>
