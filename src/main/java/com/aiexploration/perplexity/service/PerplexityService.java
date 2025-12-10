@@ -99,7 +99,7 @@ public class PerplexityService implements AIService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public PerplexityResponse chat(String userMessage, String model, String format, Double temperature, String systemPromptType, String customSystemPrompt, HttpSession session) {
+    public PerplexityResponse chat(String userMessage, String model, String format, Double temperature, Integer maxTokens, String systemPromptType, String customSystemPrompt, HttpSession session) {
         String url = config.getPerplexityApiUrl() + "/chat/completions";
 
         List<PerplexityRequest.Message> messages = new ArrayList<>();
@@ -143,7 +143,7 @@ public class PerplexityService implements AIService {
         PerplexityRequest request = PerplexityRequest.builder()
                 .model(model != null ? model : "sonar")
                 .messages(messages)
-                .maxTokens(2000)
+                .maxTokens(maxTokens != null ? maxTokens : 2000)
                 .temperature(temperature != null ? temperature : 0.2)
                 .topP(0.9)
                 .stream(false)

@@ -24,7 +24,7 @@ public class OpenRouterService implements AIService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public PerplexityResponse chat(String userMessage, String model, String format, Double temperature, String systemPromptType, String customSystemPrompt, HttpSession session) {
+    public PerplexityResponse chat(String userMessage, String model, String format, Double temperature, Integer maxTokens, String systemPromptType, String customSystemPrompt, HttpSession session) {
         String url = config.getOpenrouterApiUrl() + "/chat/completions";
 
         List<PerplexityRequest.Message> messages = new ArrayList<>();
@@ -53,7 +53,7 @@ public class OpenRouterService implements AIService {
         PerplexityRequest request = PerplexityRequest.builder()
                 .model(model)
                 .messages(messages)
-                .maxTokens(2000)
+                .maxTokens(maxTokens != null ? maxTokens : 2000)
                 .temperature(temperature != null ? temperature : 0.7)
                 .stream(false)
                 .parameters(PerplexityRequest.Parameters.builder()

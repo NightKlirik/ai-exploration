@@ -10,6 +10,7 @@ public interface AIService {
             String model,
             String format,
             Double temperature,
+            Integer maxTokens,
             String systemPromptType,
             String customSystemPrompt,
             HttpSession session

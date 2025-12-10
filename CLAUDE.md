@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AI Exploration is a Spring Boot application that provides a REST client for interacting with Perplexity AI. The application features a web interface for chat interactions with various Perplexity AI models.
+AI Exploration is a Spring Boot application that provides a REST client for interacting with multiple AI providers:
+- Perplexity AI
+- HuggingFace
+- OpenRouter
+
+The application features a web interface for chat interactions with various AI models and includes detailed token usage tracking for all requests and responses.
 
 ## Technology Stack
 
@@ -101,15 +106,29 @@ API configuration is in `src/main/resources/application.properties`:
 ## Architecture
 
 ### Service Layer
-- `PerplexityService` handles all communication with Perplexity API using Spring's RestTemplate
-- Supports multiple Perplexity models (sonar-small, sonar-large, sonar-huge)
-- Configurable parameters: max_tokens, temperature, top_p
+- `AIService` - base interface for all AI providers
+- `PerplexityService` - handles communication with Perplexity API
+- `HuggingFaceService` - handles communication with HuggingFace API
+- `OpenRouterService` - handles communication with OpenRouter API
+- All services support multiple models and configurable parameters: max_tokens, temperature, top_p
 
 ### REST API Layer
 - `ChatController` exposes /api/chat endpoint for chat functionality
+- Logs detailed token usage for every request (prompt tokens, completion tokens, total tokens)
 - `WebController` serves the web interface at root path
 
 ### Web Interface
 - Single-page application using vanilla JavaScript
-- Real-time chat interface with model selection
+- Real-time chat interface with provider and model selection
+- Displays detailed token usage for each response:
+  - 📝 Prompt tokens (input)
+  - 💬 Completion tokens (output)
+  - 🔢 Total tokens
+  - ⏱️ Execution time
 - Responsive design with gradient styling
+
+### Token Tracking
+- All API responses include token usage information
+- Token data is displayed in the web interface for each message
+- Server logs include detailed token usage for monitoring and debugging
+- Supports conversation history tracking per provider

@@ -40,6 +40,7 @@ public class ChatController {
         String model = (String) request.get("model");
         String format = (String) request.get("format");
         Double temperature = request.get("temperature") != null ? ((Number) request.get("temperature")).doubleValue() : null;
+        Integer maxTokens = request.get("maxTokens") != null ? ((Number) request.get("maxTokens")).intValue() : null;
         String systemPromptType = (String) request.get("systemPromptType");
         String customSystemPrompt = (String) request.get("customSystemPrompt");
         String provider = (String) request.get("provider");
@@ -61,7 +62,29 @@ public class ChatController {
         }
 
         try {
-            PerplexityResponse response = service.chat(message, model, format, temperature, systemPromptType, customSystemPrompt, session);
+            PerplexityResponse response = service.chat(message, model, format, temperature, maxTokens, systemPromptType, customSystemPrompt, session);
+
+            // Log token usage and finish reason
+            if (response != null) {
+                String finishReason = null;
+                if (response.getChoices() != null && !response.getChoices().isEmpty()) {
+                    finishReason = response.getChoices().get(0).getFinishReason();
+                }
+
+                if (response.getUsage() != null) {
+                    PerplexityResponse.Usage usage = response.getUsage();
+                    log.info("Response - Provider: {}, Model: {}, Prompt: {} tokens, Completion: {} tokens, Total: {} tokens, Finish: {}, Execution time: {}ms",
+                            provider, model,
+                            usage.getPromptTokens(),
+                            usage.getCompletionTokens(),
+                            usage.getTotalTokens(),
+                            finishReason,
+                            response.getExecutionTimeMs());
+                } else {
+                    log.warn("No token usage information available for provider: {}, model: {}, finish reason: {}", provider, model, finishReason);
+                }
+            }
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error on handle message: {}, provider: {}, error: {}", message, provider, e.getMessage());

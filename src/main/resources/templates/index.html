@@ -310,6 +310,8 @@
                 </select>
                 <label for="temperature" style="margin-left: 20px;">Temperature: </label>
                 <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.2" style="width: 60px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
+                <label for="maxTokens" style="margin-left: 20px;">Max Tokens: </label>
+                <input type="number" id="maxTokens" min="1" max="32000" step="1" value="2000" style="width: 80px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
                 <button class="clear-history-btn" onclick="clearHistory()">Clear History</button>
             </div>
             <div class="custom-prompt-container" id="customPromptContainer">
@@ -340,6 +342,7 @@
         const modelInput = document.getElementById('modelInput');
         const formatSelect = document.getElementById('format');
         const temperatureInput = document.getElementById('temperature');
+        const maxTokensInput = document.getElementById('maxTokens');
         const systemPromptTypeSelect = document.getElementById('systemPromptType');
         const customPromptContainer = document.getElementById('customPromptContainer');
         const customSystemPromptTextarea = document.getElementById('customSystemPrompt');
@@ -434,7 +437,7 @@
             return formatted;
         }
 
-        function addMessage(content, isUser, shouldFormatJson = false, executionTime = null, totalTokens = null) {
+        function addMessage(content, isUser, shouldFormatJson = false, executionTime = null, usage = null, finishReason = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
 
@@ -504,8 +507,8 @@
 
             messageDiv.appendChild(contentDiv);
 
-            // Add execution time and tokens for assistant messages
-            if (!isUser && (executionTime !== null || totalTokens !== null)) {
+            // Add execution time, tokens, and finish reason for assistant messages
+            if (!isUser && (executionTime !== null || usage !== null || finishReason !== null)) {
                 const metaDiv = document.createElement('div');
                 metaDiv.className = 'execution-time';
 
@@ -513,8 +516,17 @@
                 if (executionTime !== null) {
                     parts.push(`⏱️ ${executionTime}ms`);
                 }
-                if (totalTokens !== null) {
-                    parts.push(`🔢 ${totalTokens} tokens`);
+                if (usage !== null) {
+                    if (usage.prompt_tokens !== undefined && usage.completion_tokens !== undefined) {
+                        parts.push(`📝 Prompt: ${usage.prompt_tokens} tokens`);
+                        parts.push(`💬 Completion: ${usage.completion_tokens} tokens`);
+                        parts.push(`🔢 Total: ${usage.total_tokens} tokens`);
+                    } else if (usage.total_tokens !== undefined) {
+                        parts.push(`🔢 ${usage.total_tokens} tokens`);
+                    }
+                }
+                if (finishReason !== null) {
+                    parts.push(`🏁 Finish: ${finishReason}`);
                 }
 
                 metaDiv.textContent = parts.join(' • ');
@@ -581,6 +593,7 @@
 
             const format = formatSelect.value;
             const temperature = parseFloat(temperatureInput.value);
+            const maxTokens = parseInt(maxTokensInput.value);
             const systemPromptType = systemPromptTypeSelect.value;
             const customSystemPrompt = systemPromptType === 'custom' ? customSystemPromptTextarea.value.trim() : '';
 
@@ -596,7 +609,7 @@
                         'Content-Type': 'application/json',
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ provider, message, model, format, temperature, systemPromptType, customSystemPrompt }),
+                    body: JSON.stringify({ provider, message, model, format, temperature, maxTokens, systemPromptType, customSystemPrompt }),
                 });
 
                 hideLoading();
@@ -608,7 +621,8 @@
                 const data = await response.json();
                 const assistantMessage = data.choices[0].message.content;
                 const executionTime = data.execution_time_ms;
-                const totalTokens = data.usage ? data.usage.total_tokens : null;
+                const usage = data.usage || null;
+                const finishReason = data.choices[0].finish_reason || null;
                 const shouldFormatJson = format === 'json';
 
                 // Check if this is the final equipment list (for TZ prompt)
@@ -619,13 +633,13 @@
 
                     // Show dialogue part if exists
                     if (parts[0].trim()) {
-                        addMessage(parts[0].trim(), false, shouldFormatJson, executionTime, totalTokens);
+                        addMessage(parts[0].trim(), false, shouldFormatJson, executionTime, usage, finishReason);
                     }
 
                     // Show equipment list as separate message
                     const equipmentList = equipmentListMarker + parts[1];
                     setTimeout(() => {
-                        addMessage(equipmentList, false, shouldFormatJson, null, null);
+                        addMessage(equipmentList, false, shouldFormatJson, null, null, null);
 
                         // Show completion indicator
                         setTimeout(() => {
@@ -640,7 +654,7 @@
                     }, 800);
                 } else {
                     // Regular message
-                    addMessage(assistantMessage, false, shouldFormatJson, executionTime, totalTokens);
+                    addMessage(assistantMessage, false, shouldFormatJson, executionTime, usage, finishReason);
                 }
             } catch (error) {
                 hideLoading();
