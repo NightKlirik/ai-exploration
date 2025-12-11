@@ -99,6 +99,23 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
+        .message.summary .message-content {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .summary-indicator {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
         .message-content h1,
         .message-content h2,
         .message-content h3 {
@@ -313,6 +330,7 @@
                 <label for="maxTokens" style="margin-left: 20px;">Max Tokens: </label>
                 <input type="number" id="maxTokens" min="1" max="32000" step="1" value="2000" style="width: 80px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
                 <button class="clear-history-btn" onclick="clearHistory()">Clear History</button>
+                <button class="clear-history-btn" id="autoSummarizeToggle" onclick="toggleAutoSummarize()" style="margin-left: 10px;">Auto-Summarize: OFF</button>
             </div>
             <div class="custom-prompt-container" id="customPromptContainer">
                 <label for="customSystemPrompt">Custom System Prompt:</label>
@@ -348,6 +366,49 @@
         const customSystemPromptTextarea = document.getElementById('customSystemPrompt');
         const headerTitle = document.getElementById('headerTitle');
 
+        let autoSummarizeEnabled = false;
+
+        async function loadAutoSummarizeState() {
+            const provider = providerSelect.value;
+            try {
+                const response = await fetch(
+                    `/api/chat/summarization/status?provider=${provider}`,
+                    { credentials: 'include' }
+                );
+                const data = await response.json();
+                autoSummarizeEnabled = data.enabled || false;
+                updateAutoSummarizeButton();
+            } catch (error) {
+                console.error('Error loading auto-summarize state:', error);
+            }
+        }
+
+        function updateAutoSummarizeButton() {
+            const button = document.getElementById('autoSummarizeToggle');
+            button.textContent = `Auto-Summarize: ${autoSummarizeEnabled ? 'ON' : 'OFF'}`;
+            button.style.background = autoSummarizeEnabled
+                ? 'rgba(102, 126, 234, 0.5)'
+                : 'rgba(255, 255, 255, 0.2)';
+        }
+
+        async function toggleAutoSummarize() {
+            autoSummarizeEnabled = !autoSummarizeEnabled;
+            const provider = providerSelect.value;
+
+            try {
+                await fetch('/api/chat/summarization/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ provider, enabled: autoSummarizeEnabled })
+                });
+                updateAutoSummarizeButton();
+            } catch (error) {
+                console.error('Error toggling auto-summarize:', error);
+                autoSummarizeEnabled = !autoSummarizeEnabled;
+            }
+        }
+
         function handleProviderChange() {
             const provider = providerSelect.value;
 
@@ -376,6 +437,9 @@
                     modelInput.value = 'anthropic/claude-3.5-sonnet';
                 }
             }
+
+            // Load auto-summarize state for new provider
+            loadAutoSummarizeState();
         }
 
         async function handleSystemPromptChange() {
@@ -437,12 +501,19 @@
             return formatted;
         }
 
-        function addMessage(content, isUser, shouldFormatJson = false, executionTime = null, usage = null, finishReason = null) {
+        function addMessage(content, isUser, shouldFormatJson = false, executionTime = null, usage = null, finishReason = null, isSummary = false) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}${isSummary ? ' summary' : ''}`;
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
+
+            if (isSummary) {
+                const indicator = document.createElement('div');
+                indicator.className = 'summary-indicator';
+                indicator.textContent = '📋 CONVERSATION SUMMARY';
+                contentDiv.appendChild(indicator);
+            }
 
             // Try to format as JSON if requested and content looks like JSON
             if (shouldFormatJson && !isUser) {
@@ -609,7 +680,7 @@
                         'Content-Type': 'application/json',
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ provider, message, model, format, temperature, maxTokens, systemPromptType, customSystemPrompt }),
+                    body: JSON.stringify({ provider, message, model, format, temperature, maxTokens, systemPromptType, customSystemPrompt, autoSummarize: autoSummarizeEnabled }),
                 });
 
                 hideLoading();
@@ -619,6 +690,35 @@
                 }
 
                 const data = await response.json();
+
+                // Handle summarization if occurred
+                if (data.summarization_info && data.summarization_info.summarization_occurred) {
+                    // Remove last 10 messages from UI
+                    const messages = chatContainer.querySelectorAll('.message');
+                    const conversationMessages = Array.from(messages).filter(
+                        msg => !msg.classList.contains('error') && msg.id !== 'loading'
+                    );
+
+                    const messagesToRemove = conversationMessages.slice(-10);
+                    messagesToRemove.forEach(msg => msg.remove());
+
+                    // Add summary message
+                    addMessage(
+                        data.summarization_info.summary_content,
+                        false, false, null, null, null, true
+                    );
+
+                    // Show notification
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        text-align: center; padding: 8px;
+                        color: #667eea; font-size: 12px; font-style: italic;
+                    `;
+                    notification.textContent = '✨ Last 10 messages summarized';
+                    chatContainer.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
+                }
+
                 const assistantMessage = data.choices[0].message.content;
                 const executionTime = data.execution_time_ms;
                 const usage = data.usage || null;

@@ -1,7 +1,10 @@
 package com.aiexploration.perplexity.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -22,6 +25,9 @@ public class PerplexityResponse {
 
     @JsonProperty("execution_time_ms")
     private Long executionTimeMs;
+
+    @JsonProperty("summarization_info")
+    private SummarizationInfo summarizationInfo;
 
     @Data
     public static class Choice {
@@ -48,5 +54,15 @@ public class PerplexityResponse {
 
         @JsonProperty("total_tokens")
         private Integer totalTokens;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SummarizationInfo {
+        private Boolean summarizationOccurred;
+        private Integer messagesSummarized;
+        private String summaryContent;
     }
 }

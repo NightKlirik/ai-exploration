@@ -8,10 +8,7 @@ import com.aiexploration.perplexity.service.PerplexityService;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +41,9 @@ public class ChatController {
         String systemPromptType = (String) request.get("systemPromptType");
         String customSystemPrompt = (String) request.get("customSystemPrompt");
         String provider = (String) request.get("provider");
+        Boolean autoSummarize = request.get("autoSummarize") != null
+                ? (Boolean) request.get("autoSummarize")
+                : Boolean.FALSE;
 
         if (message == null || message.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
@@ -62,7 +62,7 @@ public class ChatController {
         }
 
         try {
-            PerplexityResponse response = service.chat(message, model, format, temperature, maxTokens, systemPromptType, customSystemPrompt, session);
+            PerplexityResponse response = service.chat(message, model, format, temperature, maxTokens, systemPromptType, customSystemPrompt, session, autoSummarize);
 
             // Log token usage and finish reason
             if (response != null) {
@@ -113,5 +113,42 @@ public class ChatController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/summarization/toggle")
+    public ResponseEntity<Map<String, Object>> toggleSummarization(
+            @RequestBody Map<String, Object> request,
+            HttpSession session
+    ) {
+        String provider = (String) request.get("provider");
+        Boolean enabled = (Boolean) request.get("enabled");
+
+        if (provider == null || enabled == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String key = "autoSummarize_" + provider.toLowerCase();
+        session.setAttribute(key, enabled);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("provider", provider);
+        response.put("enabled", enabled);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/summarization/status")
+    public ResponseEntity<Map<String, Object>> getSummarizationStatus(
+            @RequestParam String provider,
+            HttpSession session
+    ) {
+        String key = "autoSummarize_" + provider.toLowerCase();
+        Boolean enabled = (Boolean) session.getAttribute(key);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("provider", provider);
+        response.put("enabled", enabled != null ? enabled : false);
+
+        return ResponseEntity.ok(response);
     }
 }

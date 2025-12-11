@@ -13,6 +13,7 @@ public interface AIService {
             Integer maxTokens,
             String systemPromptType,
             String customSystemPrompt,
-            HttpSession session
+            HttpSession session,
+            Boolean autoSummarize
     );
 }

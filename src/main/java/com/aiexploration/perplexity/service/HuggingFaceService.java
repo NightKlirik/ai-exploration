@@ -4,6 +4,7 @@ import com.aiexploration.perplexity.config.AIConfig;
 import com.aiexploration.perplexity.model.PerplexityRequest;
 import com.aiexploration.perplexity.model.PerplexityResponse;
 import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -11,20 +12,23 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class HuggingFaceService implements AIService {
 
     private final RestTemplate restTemplate;
     private final AIConfig config;
+    private final HistorySummarizationService summarizationService;
 
-    public HuggingFaceService(RestTemplate restTemplate, AIConfig config) {
+    public HuggingFaceService(RestTemplate restTemplate, AIConfig config, HistorySummarizationService summarizationService) {
         this.restTemplate = restTemplate;
         this.config = config;
+        this.summarizationService = summarizationService;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public PerplexityResponse chat(String userMessage, String model, String format, Double temperature, Integer maxTokens, String systemPromptType, String customSystemPrompt, HttpSession session) {
+    public PerplexityResponse chat(String userMessage, String model, String format, Double temperature, Integer maxTokens, String systemPromptType, String customSystemPrompt, HttpSession session, Boolean autoSummarize) {
         // HuggingFace Inference API endpoint
         String url = config.getHuggingfaceApiUrl();
 
@@ -107,6 +111,41 @@ public class HuggingFaceService implements AIService {
 
             // Save updated history
             session.setAttribute(historyKey, history);
+
+            // Auto-summarization logic
+            PerplexityResponse.SummarizationInfo summarizationInfo = null;
+            if (Boolean.TRUE.equals(autoSummarize) &&
+                    summarizationService.needsSummarization(history)) {
+
+                log.info("Triggering auto-summarization for HuggingFace");
+
+                // Create temporary session to avoid history pollution
+                HttpSession tempSession = new org.springframework.mock.web.MockHttpSession();
+
+                String summary = summarizationService.createSummary(
+                        history, this, model, temperature, maxTokens, tempSession
+                );
+
+                if (summary != null) {
+                    summarizationService.applySummary(history, summary);
+                    session.setAttribute(historyKey, history);
+
+                    summarizationInfo = PerplexityResponse.SummarizationInfo.builder()
+                            .summarizationOccurred(true)
+                            .messagesSummarized(10)
+                            .summaryContent(summary)
+                            .build();
+
+                    log.info("Summarization completed successfully");
+                } else {
+                    log.warn("Summarization failed, keeping original messages");
+                }
+            }
+
+            // Set summarization info in response
+            if (summarizationInfo != null) {
+                responseBody.setSummarizationInfo(summarizationInfo);
+            }
         }
 
         return responseBody;

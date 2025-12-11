@@ -37,6 +37,7 @@ public class PerplexityRequest {
     public static class Message {
         private String role;
         private String content;
+        private java.util.Map<String, Object> metadata;
     }
 
     @Data
