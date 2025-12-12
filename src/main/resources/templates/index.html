@@ -693,13 +693,16 @@
 
                 // Handle summarization if occurred
                 if (data.summarization_info && data.summarization_info.summarization_occurred) {
-                    // Remove last 10 messages from UI
+                    // Get number of messages that were summarized
+                    const messagesSummarized = data.summarization_info.messages_summarized || 10;
+
+                    // Remove summarized messages from UI
                     const messages = chatContainer.querySelectorAll('.message');
                     const conversationMessages = Array.from(messages).filter(
                         msg => !msg.classList.contains('error') && msg.id !== 'loading'
                     );
 
-                    const messagesToRemove = conversationMessages.slice(-10);
+                    const messagesToRemove = conversationMessages.slice(-messagesSummarized);
                     messagesToRemove.forEach(msg => msg.remove());
 
                     // Add summary message
@@ -714,7 +717,7 @@
                         text-align: center; padding: 8px;
                         color: #667eea; font-size: 12px; font-style: italic;
                     `;
-                    notification.textContent = '✨ Last 10 messages summarized';
+                    notification.textContent = `✨ Last ${messagesSummarized} messages summarized`;
                     chatContainer.appendChild(notification);
                     setTimeout(() => notification.remove(), 3000);
                 }

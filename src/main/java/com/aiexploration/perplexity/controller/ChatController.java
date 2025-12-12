@@ -41,9 +41,6 @@ public class ChatController {
         String systemPromptType = (String) request.get("systemPromptType");
         String customSystemPrompt = (String) request.get("customSystemPrompt");
         String provider = (String) request.get("provider");
-        Boolean autoSummarize = request.get("autoSummarize") != null
-                ? (Boolean) request.get("autoSummarize")
-                : Boolean.FALSE;
 
         if (message == null || message.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
@@ -52,6 +49,15 @@ public class ChatController {
         // Default to perplexity if provider not specified
         if (provider == null || provider.trim().isEmpty()) {
             provider = "perplexity";
+        }
+
+        // Get autoSummarize from session first, then from request, default to false
+        String autoSummarizeKey = "autoSummarize_" + provider.toLowerCase();
+        Boolean autoSummarize = (Boolean) session.getAttribute(autoSummarizeKey);
+        if (autoSummarize == null) {
+            autoSummarize = request.get("autoSummarize") != null
+                    ? (Boolean) request.get("autoSummarize")
+                    : Boolean.FALSE;
         }
 
         // Get the appropriate service

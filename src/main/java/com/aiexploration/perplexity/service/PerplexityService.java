@@ -105,6 +105,7 @@ public class PerplexityService implements AIService {
     @SuppressWarnings("unchecked")
     public PerplexityResponse chat(String userMessage, String model, String format, Double temperature, Integer maxTokens, String systemPromptType, String customSystemPrompt, HttpSession session, Boolean autoSummarize) {
         String url = config.getPerplexityApiUrl() + "/chat/completions";
+        String historyKey = "conversationHistory_perplexity";
 
         List<PerplexityRequest.Message> messages = new ArrayList<>();
 
@@ -130,12 +131,10 @@ public class PerplexityService implements AIService {
                     .build());
         }
 
-        // Add conversation history from session if using TZ prompt or custom prompt
-        if (useTZPrompt || useCustomPrompt) {
-            List<PerplexityRequest.Message> history = (List<PerplexityRequest.Message>) session.getAttribute("conversationHistory");
-            if (history != null) {
-                messages.addAll(history);
-            }
+        // Always load conversation history from session
+        List<PerplexityRequest.Message> history = (List<PerplexityRequest.Message>) session.getAttribute(historyKey);
+        if (history != null) {
+            messages.addAll(history);
         }
 
         // Add current user message
@@ -181,9 +180,8 @@ public class PerplexityService implements AIService {
             responseBody.setExecutionTimeMs(executionTime);
         }
 
-        // Save history for TZ prompt or custom prompt
-        if ((useTZPrompt || useCustomPrompt) && responseBody != null) {
-            List<PerplexityRequest.Message> history = (List<PerplexityRequest.Message>) session.getAttribute("conversationHistory");
+        // Always save conversation history
+        if (responseBody != null) {
             if (history == null) {
                 history = new ArrayList<>();
             }
@@ -203,10 +201,10 @@ public class PerplexityService implements AIService {
             // Check if response contains completion marker (only for TZ prompt)
             if (useTZPrompt && assistantMessage.contains("СПИСОК СНАРЯЖЕНИЯ ДЛЯ ПОХОДА")) {
                 // Clear history - conversation is complete
-                session.removeAttribute("conversationHistory");
+                session.removeAttribute(historyKey);
             } else {
                 // Save updated history
-                session.setAttribute("conversationHistory", history);
+                session.setAttribute(historyKey, history);
 
                 // Auto-summarization logic
                 PerplexityResponse.SummarizationInfo summarizationInfo = null;
@@ -223,12 +221,12 @@ public class PerplexityService implements AIService {
                     );
 
                     if (summary != null) {
-                        summarizationService.applySummary(history, summary);
-                        session.setAttribute("conversationHistory", history);
+                        int summarizedCount = summarizationService.applySummary(history, summary);
+                        session.setAttribute(historyKey, history);
 
                         summarizationInfo = PerplexityResponse.SummarizationInfo.builder()
                                 .summarizationOccurred(true)
-                                .messagesSummarized(10)
+                                .messagesSummarized(summarizedCount)
                                 .summaryContent(summary)
                                 .build();
 
@@ -239,7 +237,7 @@ public class PerplexityService implements AIService {
                 }
 
                 // Set summarization info in response
-                if (responseBody != null && summarizationInfo != null) {
+                if (summarizationInfo != null) {
                     responseBody.setSummarizationInfo(summarizationInfo);
                 }
             }

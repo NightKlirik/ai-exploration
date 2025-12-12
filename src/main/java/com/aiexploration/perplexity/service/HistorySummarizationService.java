@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class HistorySummarizationService {
 
-    private static final int SUMMARIZATION_THRESHOLD = 10;
+    private static final int SUMMARIZATION_THRESHOLD = 4;
     private static final String SUMMARIZATION_SYSTEM_PROMPT = """
         You are a conversation summarizer. Your task is to create a concise summary
         of the following conversation between a user and an AI assistant.
@@ -40,6 +40,7 @@ public class HistorySummarizationService {
 
         long conversationMessageCount = history.stream()
                 .filter(m -> "user".equals(m.getRole()) || "assistant".equals(m.getRole()))
+                .filter(m -> !isSummary(m))  // Exclude summaries from count
                 .count();
 
         return conversationMessageCount >= SUMMARIZATION_THRESHOLD;
@@ -108,16 +109,18 @@ public class HistorySummarizationService {
     }
 
     /**
-     * Replaces the last 10 messages with a summary in the history
+     * Replaces the last messages with a summary in the history
+     * @return number of messages that were summarized
      */
-    public void applySummary(List<PerplexityRequest.Message> history, String summary) {
-        // Remove last 10 conversation messages
+    public int applySummary(List<PerplexityRequest.Message> history, String summary) {
+        // Remove last conversation messages
         List<PerplexityRequest.Message> systemMessages = history.stream()
                 .filter(m -> "system".equals(m.getRole()))
                 .collect(Collectors.toList());
 
         List<PerplexityRequest.Message> conversationMessages = history.stream()
                 .filter(m -> "user".equals(m.getRole()) || "assistant".equals(m.getRole()))
+                .filter(m -> !isSummary(m))  // Exclude old summaries
                 .collect(Collectors.toList());
 
         int totalCount = conversationMessages.size();
@@ -129,16 +132,30 @@ public class HistorySummarizationService {
         history.addAll(systemMessages);
         history.addAll(remainingMessages);
 
-        // Add summary message
+        // Add summary message with metadata
+        // Use "system" role to avoid breaking user/assistant alternation
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("isSummary", true);
         metadata.put("messageCount", SUMMARIZATION_THRESHOLD);
         metadata.put("timestamp", System.currentTimeMillis());
 
         history.add(PerplexityRequest.Message.builder()
-                .role("assistant")
-                .content("SUMMARY: " + summary)
+                .role("system")
+                .content("Previous conversation summary: " + summary)
                 .metadata(metadata)
                 .build());
+
+        return SUMMARIZATION_THRESHOLD;
+    }
+
+    /**
+     * Checks if a message is a summary based on metadata
+     */
+    private boolean isSummary(PerplexityRequest.Message message) {
+        if (message.getMetadata() == null) {
+            return false;
+        }
+        Object isSummary = message.getMetadata().get("isSummary");
+        return Boolean.TRUE.equals(isSummary);
     }
 }
