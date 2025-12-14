@@ -1,4 +1,4 @@
-package com.aiexploration.perplexity.controller;
+package com.aiexploration.chat.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

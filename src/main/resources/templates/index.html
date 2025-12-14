@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perplexity AI Chat</title>
+    <title>AI Chat</title>
     <style>
         * {
             margin: 0;
@@ -21,13 +21,89 @@
             padding: 20px;
         }
 
+        .main-wrapper {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+            height: 80vh;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+        }
+
+        .new-conversation-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .new-conversation-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .conversation-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+
+        .conversation-item:hover {
+            background: #f7f8fa;
+        }
+
+        .conversation-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .conversation-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .conversation-meta {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
         .container {
             background: white;
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 800px;
-            width: 100%;
-            height: 80vh;
+            flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -296,28 +372,31 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <div class="main-wrapper">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div>Conversations</div>
+                <button class="new-conversation-btn" onclick="createNewConversation()">+ New Conversation</button>
+            </div>
+            <div class="conversations-list" id="conversationsList">
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="header">
             <h1 id="headerTitle">AI Chat</h1>
             <div class="model-selector">
                 <label for="provider">Provider: </label>
                 <select id="provider" onchange="handleProviderChange()">
-                    <option value="perplexity">Perplexity</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="deepseek">DeepSeek</option>
                     <option value="huggingface">HuggingFace</option>
-                    <option value="openrouter">OpenRouter</option>
                 </select>
                 <label for="model" style="margin-left: 20px;">Model: </label>
-                <div id="modelContainer" style="display: inline;">
-                    <select id="modelSelect" style="display: inline;">
-                        <option value="sonar">Sonar</option>
-                        <option value="openai/gpt-4o">openai/gpt-4o</option>
-                    </select>
-                    <input type="text" id="modelInput" placeholder="Enter model name..." style="display: none; width: 200px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
-                </div>
+                <input type="text" id="modelInput" placeholder="Enter model name..." style="width: 300px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
                 <label for="systemPromptType" style="margin-left: 20px;">System Prompt: </label>
                 <select id="systemPromptType" onchange="handleSystemPromptChange()">
                     <option value="none">None</option>
-                    <option value="tz">Hiking Trip Planner</option>
                     <option value="custom">Custom</option>
                 </select>
                 <label for="format" style="margin-left: 20px;">Format: </label>
@@ -326,7 +405,7 @@
                     <option value="json">JSON</option>
                 </select>
                 <label for="temperature" style="margin-left: 20px;">Temperature: </label>
-                <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.2" style="width: 60px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
+                <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.7" style="width: 60px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
                 <label for="maxTokens" style="margin-left: 20px;">Max Tokens: </label>
                 <input type="number" id="maxTokens" min="1" max="32000" step="1" value="2000" style="width: 80px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
                 <button class="clear-history-btn" onclick="clearHistory()">Clear History</button>
@@ -349,6 +428,7 @@
             ></textarea>
             <button onclick="sendMessage()" id="sendButton">Send</button>
         </div>
+        </div>
     </div>
 
     <script>
@@ -356,7 +436,6 @@
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
         const providerSelect = document.getElementById('provider');
-        const modelSelect = document.getElementById('modelSelect');
         const modelInput = document.getElementById('modelInput');
         const formatSelect = document.getElementById('format');
         const temperatureInput = document.getElementById('temperature');
@@ -365,8 +444,11 @@
         const customPromptContainer = document.getElementById('customPromptContainer');
         const customSystemPromptTextarea = document.getElementById('customSystemPrompt');
         const headerTitle = document.getElementById('headerTitle');
+        const conversationsList = document.getElementById('conversationsList');
 
         let autoSummarizeEnabled = false;
+        let currentConversationId = null;
+        let conversations = [];
 
         async function loadAutoSummarizeState() {
             const provider = providerSelect.value;
@@ -414,28 +496,22 @@
 
             // Update header title
             const providerNames = {
-                'perplexity': 'Perplexity AI Chat',
-                'huggingface': 'HuggingFace Chat',
-                'openrouter': 'OpenRouter Chat'
+                'openai': 'OpenAI Chat',
+                'deepseek': 'DeepSeek Chat',
+                'huggingface': 'HuggingFace Chat'
             };
             headerTitle.textContent = providerNames[provider] || 'AI Chat';
 
-            // Switch between select and input based on provider
-            if (provider === 'perplexity') {
-                modelSelect.style.display = 'inline';
-                modelInput.style.display = 'none';
-            } else {
-                modelSelect.style.display = 'none';
-                modelInput.style.display = 'inline';
-
-                // Set default model suggestions as placeholder
-                if (provider === 'huggingface') {
-                    modelInput.placeholder = 'e.g., meta-llama/Llama-3.1-8B-Instruct';
-                    modelInput.value = 'meta-llama/Llama-3.1-8B-Instruct';
-                } else if (provider === 'openrouter') {
-                    modelInput.placeholder = 'e.g., anthropic/claude-3.5-sonnet';
-                    modelInput.value = 'anthropic/claude-3.5-sonnet';
-                }
+            // Set default model suggestions as placeholder
+            if (provider === 'openai') {
+                modelInput.placeholder = 'e.g., gpt-4o, gpt-4-turbo';
+                modelInput.value = 'gpt-4o';
+            } else if (provider === 'deepseek') {
+                modelInput.placeholder = 'e.g., deepseek-chat, deepseek-coder';
+                modelInput.value = 'deepseek-chat';
+            } else if (provider === 'huggingface') {
+                modelInput.placeholder = 'e.g., meta-llama/Llama-3.1-8B-Instruct';
+                modelInput.value = 'meta-llama/Llama-3.1-8B-Instruct';
             }
 
             // Load auto-summarize state for new provider
@@ -650,14 +726,28 @@
 
             const provider = providerSelect.value;
 
-            // Get model based on provider
-            let model;
-            if (provider === 'perplexity') {
-                model = modelSelect.value;
-            } else {
-                model = modelInput.value.trim();
-                if (!model) {
-                    showError('Please enter a model name');
+            // Get model from input
+            const model = modelInput.value.trim();
+            if (!model) {
+                showError('Please enter a model name');
+                return;
+            }
+
+            // Auto-create conversation if none selected
+            if (!currentConversationId) {
+                const title = message.length > 50 ? message.substring(0, 50) + '...' : message;
+                try {
+                    const response = await fetch('/api/conversations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, provider, model })
+                    });
+                    const conversation = await response.json();
+                    currentConversationId = conversation.id;
+                    await loadConversations();
+                } catch (error) {
+                    console.error('Error creating conversation:', error);
+                    showError('Failed to create conversation');
                     return;
                 }
             }
@@ -674,13 +764,29 @@
             showLoading();
 
             try {
+                const requestBody = {
+                    provider,
+                    message,
+                    model,
+                    format,
+                    temperature,
+                    maxTokens,
+                    systemPromptType,
+                    customSystemPrompt,
+                    autoSummarize: autoSummarizeEnabled
+                };
+
+                if (currentConversationId) {
+                    requestBody.conversationId = currentConversationId;
+                }
+
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ provider, message, model, format, temperature, maxTokens, systemPromptType, customSystemPrompt, autoSummarize: autoSummarizeEnabled }),
+                    body: JSON.stringify(requestBody),
                 });
 
                 hideLoading();
@@ -722,43 +828,14 @@
                     setTimeout(() => notification.remove(), 3000);
                 }
 
-                const assistantMessage = data.choices[0].message.content;
+                const assistantMessage = data.content;
                 const executionTime = data.execution_time_ms;
                 const usage = data.usage || null;
-                const finishReason = data.choices[0].finish_reason || null;
+                const finishReason = data.finish_reason || null;
                 const shouldFormatJson = format === 'json';
 
-                // Check if this is the final equipment list (for TZ prompt)
-                const equipmentListMarker = '### 🎒 СПИСОК СНАРЯЖЕНИЯ ДЛЯ ПОХОДА';
-                if (systemPromptType === 'tz' && assistantMessage.includes(equipmentListMarker)) {
-                    // Split message into dialogue part and equipment list
-                    const parts = assistantMessage.split(equipmentListMarker);
-
-                    // Show dialogue part if exists
-                    if (parts[0].trim()) {
-                        addMessage(parts[0].trim(), false, shouldFormatJson, executionTime, usage, finishReason);
-                    }
-
-                    // Show equipment list as separate message
-                    const equipmentList = equipmentListMarker + parts[1];
-                    setTimeout(() => {
-                        addMessage(equipmentList, false, shouldFormatJson, null, null, null);
-
-                        // Show completion indicator
-                        setTimeout(() => {
-                            const completionDiv = document.createElement('div');
-                            completionDiv.style.textAlign = 'center';
-                            completionDiv.style.padding = '10px';
-                            completionDiv.style.color = '#667eea';
-                            completionDiv.style.fontWeight = 'bold';
-                            chatContainer.appendChild(completionDiv);
-                            chatContainer.scrollTop = chatContainer.scrollHeight;
-                        }, 500);
-                    }, 800);
-                } else {
-                    // Regular message
-                    addMessage(assistantMessage, false, shouldFormatJson, executionTime, usage, finishReason);
-                }
+                // Add the assistant's message
+                addMessage(assistantMessage, false, shouldFormatJson, executionTime, usage, finishReason);
             } catch (error) {
                 hideLoading();
                 showError(error.message);
@@ -768,8 +845,120 @@
             }
         }
 
+        // Conversation management functions
+        async function loadConversations() {
+            try {
+                const response = await fetch('/api/conversations');
+                conversations = await response.json();
+                renderConversations();
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+
+        function renderConversations() {
+            conversationsList.innerHTML = '';
+            conversations.forEach(conv => {
+                const item = document.createElement('div');
+                item.className = `conversation-item ${conv.id === currentConversationId ? 'active' : ''}`;
+                item.onclick = () => loadConversation(conv.id);
+
+                const title = document.createElement('div');
+                title.className = 'conversation-title';
+                title.textContent = conv.title;
+
+                const meta = document.createElement('div');
+                meta.className = 'conversation-meta';
+                meta.textContent = `${conv.provider} - ${new Date(conv.updatedAt).toLocaleDateString()}`;
+
+                item.appendChild(title);
+                item.appendChild(meta);
+                conversationsList.appendChild(item);
+            });
+        }
+
+        async function createNewConversation() {
+            const title = prompt('Enter conversation title:', 'New Conversation');
+            if (!title) return;
+
+            const provider = providerSelect.value;
+            const model = modelInput.value;
+
+            try {
+                const response = await fetch('/api/conversations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, provider, model })
+                });
+
+                const conversation = await response.json();
+                currentConversationId = conversation.id;
+                chatContainer.innerHTML = '';
+                await loadConversations();
+            } catch (error) {
+                console.error('Error creating conversation:', error);
+                showError('Failed to create conversation');
+            }
+        }
+
+        async function loadConversation(id) {
+            try {
+                const response = await fetch(`/api/conversations/${id}`);
+                const conversation = await response.json();
+
+                currentConversationId = id;
+                chatContainer.innerHTML = '';
+
+                // Update provider and model
+                providerSelect.value = conversation.provider;
+                modelInput.value = conversation.model;
+                handleProviderChange();
+
+                // Restore history to session
+                try {
+                    await fetch('/api/chat/restore-history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            conversationId: id,
+                            provider: conversation.provider
+                        })
+                    });
+                } catch (error) {
+                    console.error('Error restoring history:', error);
+                }
+
+                // Load messages
+                conversation.messages.forEach(msg => {
+                    const isUser = msg.role === 'user';
+                    const usage = msg.promptTokens ? {
+                        prompt_tokens: msg.promptTokens,
+                        completion_tokens: msg.completionTokens,
+                        total_tokens: msg.totalTokens
+                    } : null;
+
+                    addMessage(
+                        msg.content,
+                        isUser,
+                        false,
+                        msg.executionTimeMs,
+                        usage,
+                        msg.finishReason,
+                        msg.isSummary
+                    );
+                });
+
+                renderConversations();
+            } catch (error) {
+                console.error('Error loading conversation:', error);
+                showError('Failed to load conversation');
+            }
+        }
+
         // Initialize provider UI on load
         handleProviderChange();
+        loadConversations();
         messageInput.focus();
     </script>
 </body>

@@ -1,11 +1,11 @@
-package com.aiexploration.perplexity.service;
+package com.aiexploration.chat.service;
 
-import com.aiexploration.perplexity.model.PerplexityResponse;
+import com.aiexploration.chat.model.ChatResponse;
 import jakarta.servlet.http.HttpSession;
 
 public interface AIService {
 
-    PerplexityResponse chat(
+    ChatResponse chat(
             String userMessage,
             String model,
             String format,

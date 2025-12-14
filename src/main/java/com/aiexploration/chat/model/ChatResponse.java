@@ -1,4 +1,4 @@
-package com.aiexploration.perplexity.model;
+package com.aiexploration.chat.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -6,45 +6,28 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
-public class PerplexityResponse {
-
-    private String id;
-
-    private String model;
-
-    private String object;
-
-    private Long created;
-
-    private List<Choice> choices;
-
-    private Usage usage;
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ChatResponse {
+    private String content;
 
     @JsonProperty("execution_time_ms")
     private Long executionTimeMs;
+
+    private Usage usage;
+
+    @JsonProperty("finish_reason")
+    private String finishReason;
 
     @JsonProperty("summarization_info")
     private SummarizationInfo summarizationInfo;
 
     @Data
-    public static class Choice {
-        private Integer index;
-        private Message message;
-
-        @JsonProperty("finish_reason")
-        private String finishReason;
-    }
-
-    @Data
-    public static class Message {
-        private String role;
-        private String content;
-    }
-
-    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Usage {
         @JsonProperty("prompt_tokens")
         private Integer promptTokens;
@@ -61,8 +44,13 @@ public class PerplexityResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class SummarizationInfo {
+        @JsonProperty("summarization_occurred")
         private Boolean summarizationOccurred;
+
+        @JsonProperty("messages_summarized")
         private Integer messagesSummarized;
+
+        @JsonProperty("summary_content")
         private String summaryContent;
     }
 }
