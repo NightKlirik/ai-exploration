@@ -1,60 +1,31 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.5.8'
-    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.5.8' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
 }
 
-group = 'com.aiexploration'
-version = '0.0.1-SNAPSHOT'
+allprojects {
+    group = 'com.aiexploration'
+    version = '0.0.1-SNAPSHOT'
 
-java {
-    sourceCompatibility = '17'
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
+    repositories {
+        mavenCentral()
     }
 }
 
-repositories {
-    mavenCentral()
-}
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
 
-ext {
-    set('springAiVersion', "1.1.2")
-}
-
-
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
+        }
     }
-}
 
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-    // Database
-    implementation 'org.postgresql:postgresql'
-
-    // Spring AI starters
-    implementation 'org.springframework.ai:spring-ai-starter-model-deepseek'
-    implementation 'org.springframework.ai:spring-ai-starter-model-huggingface'
-    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
-    implementation 'org.springframework.ai:spring-ai-mcp-client-spring-boot-starter:1.0.0-M6'
-    implementation 'io.projectreactor.netty:reactor-netty:1.1.13'
-
-    // Spring test (for MockHttpSession)
-    implementation 'org.springframework:spring-test'
-
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
 }

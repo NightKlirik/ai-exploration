@@ -1,1 +1,4 @@
 rootProject.name = 'ai-exploration'
+
+include 'ai-exploration-app'
+include 'mcp-weather-server'

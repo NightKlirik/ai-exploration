@@ -1,0 +1,25 @@
+// Plugins applied by root build.gradle
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Database
+    implementation 'org.postgresql:postgresql'
+
+    // Simple OpenAI client
+    implementation('io.github.sashirestela:simple-openai:3.22.2') {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+    implementation 'io.projectreactor.netty:reactor-netty:1.1.13'
+
+    // Spring test (for MockHttpSession)
+    implementation 'org.springframework:spring-test'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .main-wrapper {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+            height: 80vh;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+        }
+
+        .new-conversation-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .new-conversation-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .conversation-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+
+        .conversation-item:hover {
+            background: #f7f8fa;
+        }
+
+        .conversation-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .conversation-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .conversation-meta {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .model-selector {
+            margin-top: 10px;
+        }
+
+        .model-selector select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .model-selector select option {
+            color: #333;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f7f8fa;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.summary .message-content {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .summary-indicator {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .message.tool-call .message-content {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 4px solid #ffc107;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tool-call-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tool-call-header:hover {
+            opacity: 0.8;
+        }
+
+        .tool-call-toggle {
+            font-size: 14px;
+            margin-left: 8px;
+            transition: transform 0.2s;
+        }
+
+        .tool-call-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .tool-call-indicator {
+            display: inline-block;
+            background: #ffc107;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .tool-call-details {
+            margin-top: 8px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+        }
+
+        .tool-call-details.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .tool-args, .tool-result {
+            margin-top: 8px;
+        }
+
+        .tool-args pre, .tool-result pre {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 8px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 4px 0;
+            font-size: 12px;
+        }
+
+        .message-content h1,
+        .message-content h2,
+        .message-content h3 {
+            color: inherit;
+        }
+
+        .message-content strong {
+            font-weight: 600;
+        }
+
+        .message-content em {
+            font-style: italic;
+        }
+
+        .message-content code {
+            word-break: break-word;
+        }
+
+        .message-content pre {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .execution-time {
+            font-size: 11px;
+            color: #888;
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-container textarea {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            resize: none;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-container textarea:focus {
+            border-color: #667eea;
+        }
+
+        .input-container button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .input-container button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .input-container button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .loading-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dots span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .custom-prompt-container {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .custom-prompt-container.active {
+            display: block;
+        }
+
+        .custom-prompt-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .custom-prompt-container textarea {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .custom-prompt-container textarea:focus {
+            outline: none;
+            border-color: white;
+            background: white;
+        }
+
+        .clear-history-btn {
+            margin-left: 20px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clear-history-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
+
+        /* Tab Navigation Styles */
+        .tab-navigation {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0 10px 0;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* MCP Layout Styles */
+        .mcp-container {
+            display: flex;
+            gap: 20px;
+            height: 100%;
+            padding: 20px;
+            background: #f7f8fa;
+            overflow: hidden;
+        }
+
+        .mcp-sidebar {
+            width: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .mcp-main {
+            flex: 1;
+            overflow-y: auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .mcp-section {
+            margin-bottom: 30px;
+        }
+
+        .mcp-section h3 {
+            margin-bottom: 12px;
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Server & Tool Item Styles */
+        .server-item, .tool-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+
+        .server-item:hover, .tool-item:hover {
+            background: #f0f0f0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .server-item.active, .tool-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .server-item button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+        }
+
+        /* Buttons */
+        .add-server-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .add-server-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .modal-content input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-content button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-content button[type="submit"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Tool Details Styles */
+        .tool-detail {
+            background: white;
+            border-radius: 12px;
+        }
+
+        .tool-detail h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .tool-detail p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .tool-param {
+            margin-bottom: 16px;
+        }
+
+        .tool-param label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .tool-param input,
+        .tool-param textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .tool-param input:focus,
+        .tool-param textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tool-param textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .tool-result {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f7f8fa;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+            border-left: 4px solid #667eea;
+        }
+
+        .tool-detail form button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .tool-detail form button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div>Conversations</div>
+                <button class="new-conversation-btn" onclick="createNewConversation()">+ New Conversation</button>
+            </div>
+            <div class="conversations-list" id="conversationsList">
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="header">
+            <h1 id="headerTitle">AI Chat</h1>
+
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" onclick="switchTab('chat')">Chat</button>
+                <button class="tab-btn" onclick="switchTab('mcp')">MCP Tools</button>
+            </div>
+
+            <div class="model-selector" id="chatControls">
+                <label for="provider">Provider: </label>
+                <select id="provider" onchange="handleProviderChange()">
+                    <option value="openai">OpenAI</option>
+                    <option value="deepseek">DeepSeek</option>
+                </select>
+                <label for="model" style="margin-left: 20px;">Model: </label>
+                <input type="text" id="modelInput" placeholder="Enter model name..." style="width: 300px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
+                <label for="systemPromptType" style="margin-left: 20px;">System Prompt: </label>
+                <select id="systemPromptType" onchange="handleSystemPromptChange()">
+                    <option value="none">None</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <label for="format" style="margin-left: 20px;">Format: </label>
+                <select id="format">
+                    <option value="text">Text</option>
+                    <option value="json">JSON</option>
+                </select>
+                <label for="temperature" style="margin-left: 20px;">Temperature: </label>
+                <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.7" style="width: 60px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
+                <label for="maxTokens" style="margin-left: 20px;">Max Tokens: </label>
+                <input type="number" id="maxTokens" min="1" max="32000" step="1" value="2000" style="width: 80px; padding: 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.9); color: #333; font-size: 12px;">
+                <button class="clear-history-btn" onclick="clearHistory()">Clear History</button>
+                <button class="clear-history-btn" id="autoSummarizeToggle" onclick="toggleAutoSummarize()" style="margin-left: 10px;">Auto-Summarize: OFF</button>
+                <label for="enableFunctionCalling" style="margin-left: 20px; cursor: pointer;">
+                    <input type="checkbox" id="enableFunctionCalling" style="cursor: pointer;"> Enable MCP Tools
+                </label>
+            </div>
+            <div class="custom-prompt-container" id="customPromptContainer">
+                <label for="customSystemPrompt">Custom System Prompt:</label>
+                <textarea id="customSystemPrompt" placeholder="Enter your custom system prompt here..."></textarea>
+            </div>
+        </div>
+
+        <!-- Chat Tab -->
+        <div id="chatTab" class="tab-content active">
+            <div class="chat-container" id="chatContainer"></div>
+
+            <div class="input-container">
+                <textarea
+                    id="messageInput"
+                    placeholder="Ask me anything..."
+                    rows="2"
+                    onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"
+                ></textarea>
+                <button onclick="sendMessage()" id="sendButton">Send</button>
+            </div>
+        </div>
+
+        <!-- MCP Tab -->
+        <div id="mcpTab" class="tab-content" style="display: none;">
+            <div class="mcp-container">
+                <div class="mcp-sidebar">
+                    <div class="mcp-section">
+                        <h3>MCP Servers</h3>
+                        <div id="mcpServersList"></div>
+                        <button class="add-server-btn" onclick="showAddServerModal()">+ Add Server</button>
+                    </div>
+                    <div class="mcp-section">
+                        <h3>Available Tools</h3>
+                        <div id="mcpToolsList"></div>
+                    </div>
+                </div>
+                <div class="mcp-main">
+                    <div id="mcpToolDetails">
+                        <p>Select a tool to view details and execute</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        </div>
+    </div>
+
+    <!-- Add Server Modal -->
+    <div id="addServerModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Add MCP Server</h3>
+            <form id="addServerForm">
+                <input type="text" id="serverName" placeholder="Server Name" required>
+                <input type="url" id="serverUrl" placeholder="http://localhost:8081" required>
+                <input type="text" id="serverApiKey" placeholder="API Key (optional)">
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="submit" style="flex: 1;">Add</button>
+                    <button type="button" onclick="hideAddServerModal()" style="flex: 1; background: #999;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const providerSelect = document.getElementById('provider');
+        const modelInput = document.getElementById('modelInput');
+        const formatSelect = document.getElementById('format');
+        const temperatureInput = document.getElementById('temperature');
+        const maxTokensInput = document.getElementById('maxTokens');
+        const systemPromptTypeSelect = document.getElementById('systemPromptType');
+        const customPromptContainer = document.getElementById('customPromptContainer');
+        const customSystemPromptTextarea = document.getElementById('customSystemPrompt');
+        const headerTitle = document.getElementById('headerTitle');
+        const conversationsList = document.getElementById('conversationsList');
+
+        let autoSummarizeEnabled = false;
+        let currentConversationId = null;
+        let conversations = [];
+
+        async function loadAutoSummarizeState() {
+            const provider = providerSelect.value;
+            try {
+                const response = await fetch(
+                    `/api/chat/summarization/status?provider=${provider}`,
+                    { credentials: 'include' }
+                );
+                const data = await response.json();
+                autoSummarizeEnabled = data.enabled || false;
+                updateAutoSummarizeButton();
+            } catch (error) {
+                console.error('Error loading auto-summarize state:', error);
+            }
+        }
+
+        function updateAutoSummarizeButton() {
+            const button = document.getElementById('autoSummarizeToggle');
+            button.textContent = `Auto-Summarize: ${autoSummarizeEnabled ? 'ON' : 'OFF'}`;
+            button.style.background = autoSummarizeEnabled
+                ? 'rgba(102, 126, 234, 0.5)'
+                : 'rgba(255, 255, 255, 0.2)';
+        }
+
+        async function toggleAutoSummarize() {
+            autoSummarizeEnabled = !autoSummarizeEnabled;
+            const provider = providerSelect.value;
+
+            try {
+                await fetch('/api/chat/summarization/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ provider, enabled: autoSummarizeEnabled })
+                });
+                updateAutoSummarizeButton();
+            } catch (error) {
+                console.error('Error toggling auto-summarize:', error);
+                autoSummarizeEnabled = !autoSummarizeEnabled;
+            }
+        }
+
+        function handleProviderChange() {
+            const provider = providerSelect.value;
+
+            // Update header title
+            const providerNames = {
+                'openai': 'OpenAI Chat',
+                'deepseek': 'DeepSeek Chat'
+            };
+            headerTitle.textContent = providerNames[provider] || 'AI Chat';
+
+            // Set default model suggestions as placeholder
+            if (provider === 'openai') {
+                modelInput.placeholder = 'e.g., gpt-4o, gpt-4-turbo';
+                modelInput.value = 'gpt-4o';
+            } else if (provider === 'deepseek') {
+                modelInput.placeholder = 'e.g., deepseek-chat, deepseek-coder';
+                modelInput.value = 'deepseek-chat';
+            }
+
+            // Load auto-summarize state for new provider
+            loadAutoSummarizeState();
+        }
+
+        async function handleSystemPromptChange() {
+            const selectedType = systemPromptTypeSelect.value;
+
+            // Show/hide custom prompt textarea
+            if (selectedType === 'custom') {
+                customPromptContainer.classList.add('active');
+            } else {
+                customPromptContainer.classList.remove('active');
+            }
+        }
+
+        async function clearHistory() {
+            const provider = providerSelect.value;
+            chatContainer.innerHTML = '';
+            try {
+                await fetch('/api/chat/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ provider })
+                });
+            } catch (error) {
+                console.error('Error clearing history:', error);
+                showError('Failed to clear history');
+            }
+        }
+
+        function formatMarkdown(text) {
+            // Basic markdown formatting
+            let formatted = text;
+
+            // Headers (###, ##, #)
+            formatted = formatted.replace(/^### (.*$)/gim, '<h3 style="margin: 8px 0; font-size: 1.1em; font-weight: 600;">$1</h3>');
+            formatted = formatted.replace(/^## (.*$)/gim, '<h2 style="margin: 10px 0; font-size: 1.2em; font-weight: 600;">$1</h2>');
+            formatted = formatted.replace(/^# (.*$)/gim, '<h1 style="margin: 12px 0; font-size: 1.3em; font-weight: 600;">$1</h1>');
+
+            // Bold (**text**)
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            // Italic (*text*)
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+            // Lists (-, *, •)
+            formatted = formatted.replace(/^[\-\*\•] (.*$)/gim, '<div style="margin-left: 20px;">• $1</div>');
+
+            // Code blocks (```code```)
+            formatted = formatted.replace(/```(.*?)```/gs, '<pre style="background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px; margin: 8px 0; overflow-x: auto;">$1</pre>');
+
+            // Inline code (`code`)
+            formatted = formatted.replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 0.9em;">$1</code>');
+
+            // Line breaks
+            formatted = formatted.replace(/\n/g, '<br>');
+
+            return formatted;
+        }
+
+        function addMessage(content, isUser, shouldFormatJson = false, executionTime = null, usage = null, finishReason = null, isSummary = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}${isSummary ? ' summary' : ''}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+
+            if (isSummary) {
+                const indicator = document.createElement('div');
+                indicator.className = 'summary-indicator';
+                indicator.textContent = '📋 CONVERSATION SUMMARY';
+                contentDiv.appendChild(indicator);
+            }
+
+            // Try to format as JSON if requested and content looks like JSON
+            if (shouldFormatJson && !isUser) {
+                try {
+                    const jsonContent = JSON.parse(content);
+
+                    // Recursively process object to add indentation to multi-line strings
+                    function processObject(obj, level = 0) {
+                        if (typeof obj === 'string') {
+                            // Add proper indentation to multi-line strings
+                            if (obj.includes('\n')) {
+                                const indent = '  '.repeat(level + 1);
+                                return obj.split('\n').join('\n' + indent);
+                            }
+                            return obj;
+                        }
+
+                        if (Array.isArray(obj)) {
+                            return obj.map(item => processObject(item, level + 1));
+                        }
+
+                        if (obj !== null && typeof obj === 'object') {
+                            const result = {};
+                            for (const [key, value] of Object.entries(obj)) {
+                                result[key] = processObject(value, level + 1);
+                            }
+                            return result;
+                        }
+
+                        return obj;
+                    }
+
+                    const processedContent = processObject(jsonContent);
+                    let formattedJson = JSON.stringify(processedContent, null, 2);
+
+                    // Unescape special characters for better readability
+                    formattedJson = formattedJson.replace(/\\n/g, '\n')
+                                                 .replace(/\\t/g, '\t')
+                                                 .replace(/\\r/g, '\r');
+
+                    const preElement = document.createElement('pre');
+                    preElement.style.margin = '0';
+                    preElement.style.whiteSpace = 'pre-wrap';
+                    preElement.style.wordWrap = 'break-word';
+                    preElement.style.fontFamily = 'monospace';
+                    preElement.style.fontSize = '13px';
+                    preElement.textContent = formattedJson;
+
+                    contentDiv.appendChild(preElement);
+                } catch (e) {
+                    // If parsing fails, display with markdown formatting
+                    contentDiv.innerHTML = formatMarkdown(content);
+                }
+            } else {
+                // Format markdown for assistant messages, plain text for user
+                if (isUser) {
+                    contentDiv.textContent = content;
+                } else {
+                    contentDiv.innerHTML = formatMarkdown(content);
+                }
+            }
+
+            messageDiv.appendChild(contentDiv);
+
+            // Add execution time, tokens, and finish reason for assistant messages
+            if (!isUser && (executionTime !== null || usage !== null || finishReason !== null)) {
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'execution-time';
+
+                const parts = [];
+                if (executionTime !== null) {
+                    parts.push(`⏱️ ${executionTime}ms`);
+                }
+                if (usage !== null) {
+                    if (usage.prompt_tokens !== undefined && usage.completion_tokens !== undefined) {
+                        parts.push(`📝 Prompt: ${usage.prompt_tokens} tokens`);
+                        parts.push(`💬 Completion: ${usage.completion_tokens} tokens`);
+                        parts.push(`🔢 Total: ${usage.total_tokens} tokens`);
+                    } else if (usage.total_tokens !== undefined) {
+                        parts.push(`🔢 ${usage.total_tokens} tokens`);
+                    }
+                }
+                if (finishReason !== null) {
+                    parts.push(`🏁 Finish: ${finishReason}`);
+                }
+
+                metaDiv.textContent = parts.join(' • ');
+                contentDiv.appendChild(metaDiv);
+            }
+
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addToolCallMessage(toolCall) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message tool-call';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+
+            // Create unique ID for this tool call
+            const toolCallId = `tool-call-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+            // Header with collapse toggle
+            let html = `
+                <div class="tool-call-header" onclick="toggleToolCall('${toolCallId}')">
+                    <div class="tool-call-indicator">🔧 Tool: ${toolCall.tool_name}</div>
+                    <span class="tool-call-toggle collapsed">▼</span>
+                </div>
+            `;
+
+            // Collapsible details (initially collapsed)
+            html += `<div id="${toolCallId}" class="tool-call-details collapsed">`;
+
+            // Arguments
+            html += '<div class="tool-args"><strong>Arguments:</strong>';
+            html += `<pre>${JSON.stringify(toolCall.arguments, null, 2)}</pre></div>`;
+
+            // Result
+            html += '<div class="tool-result"><strong>Result:</strong>';
+            html += `<pre>${formatToolResult(toolCall.result)}</pre></div>`;
+
+            // Execution time
+            if (toolCall.execution_time_ms) {
+                html += `<div class="execution-time">⏱️ ${toolCall.execution_time_ms}ms</div>`;
+            }
+
+            html += '</div>'; // Close tool-call-details
+
+            contentDiv.innerHTML = html;
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function toggleToolCall(toolCallId) {
+            const detailsDiv = document.getElementById(toolCallId);
+            const toggleIcon = detailsDiv.previousElementSibling.querySelector('.tool-call-toggle');
+
+            if (detailsDiv.classList.contains('collapsed')) {
+                detailsDiv.classList.remove('collapsed');
+                detailsDiv.style.maxHeight = detailsDiv.scrollHeight + 'px';
+                toggleIcon.classList.remove('collapsed');
+            } else {
+                detailsDiv.style.maxHeight = '0';
+                detailsDiv.classList.add('collapsed');
+                toggleIcon.classList.add('collapsed');
+            }
+        }
+
+        function formatToolResult(result) {
+            if (!result) {
+                return 'null';
+            }
+
+            // If MCP result with content array
+            if (typeof result === 'object' && result.content && Array.isArray(result.content)) {
+                return result.content
+                    .filter(c => c.text)
+                    .map(c => c.text)
+                    .join('\n');
+            }
+
+            // Otherwise stringify
+            return typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+        }
+
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant';
+            loadingDiv.id = 'loading';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content loading';
+            contentDiv.innerHTML = `
+                <span>Thinking</span>
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+
+            loadingDiv.appendChild(contentDiv);
+            chatContainer.appendChild(loadingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = `Error: ${message}`;
+            chatContainer.appendChild(errorDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            const provider = providerSelect.value;
+
+            // Get model from input
+            const model = modelInput.value.trim();
+            if (!model) {
+                showError('Please enter a model name');
+                return;
+            }
+
+            // Auto-create conversation if none selected
+            if (!currentConversationId) {
+                const title = message.length > 50 ? message.substring(0, 50) + '...' : message;
+                try {
+                    const response = await fetch('/api/conversations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, provider, model })
+                    });
+                    const conversation = await response.json();
+                    currentConversationId = conversation.id;
+                    await loadConversations();
+                } catch (error) {
+                    console.error('Error creating conversation:', error);
+                    showError('Failed to create conversation');
+                    return;
+                }
+            }
+
+            const format = formatSelect.value;
+            const temperature = parseFloat(temperatureInput.value);
+            const maxTokens = parseInt(maxTokensInput.value);
+            const systemPromptType = systemPromptTypeSelect.value;
+            const customSystemPrompt = systemPromptType === 'custom' ? customSystemPromptTextarea.value.trim() : '';
+
+            addMessage(message, true);
+            messageInput.value = '';
+            sendButton.disabled = true;
+            showLoading();
+
+            try {
+                const requestBody = {
+                    provider,
+                    message,
+                    model,
+                    format,
+                    temperature,
+                    maxTokens,
+                    systemPromptType,
+                    customSystemPrompt,
+                    autoSummarize: autoSummarizeEnabled,
+                    enableFunctionCalling: document.getElementById('enableFunctionCalling').checked
+                };
+
+                if (currentConversationId) {
+                    requestBody.conversationId = currentConversationId;
+                }
+
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(requestBody),
+                });
+
+                hideLoading();
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Display tool calls if present
+                if (data.tool_calls && data.tool_calls.length > 0) {
+                    data.tool_calls.forEach(toolCall => addToolCallMessage(toolCall));
+                }
+
+                // Handle summarization if occurred
+                if (data.summarization_info && data.summarization_info.summarization_occurred) {
+                    // Get number of messages that were summarized
+                    const messagesSummarized = data.summarization_info.messages_summarized || 10;
+
+                    // Remove summarized messages from UI
+                    const messages = chatContainer.querySelectorAll('.message');
+                    const conversationMessages = Array.from(messages).filter(
+                        msg => !msg.classList.contains('error') && msg.id !== 'loading'
+                    );
+
+                    const messagesToRemove = conversationMessages.slice(-messagesSummarized);
+                    messagesToRemove.forEach(msg => msg.remove());
+
+                    // Add summary message
+                    addMessage(
+                        data.summarization_info.summary_content,
+                        false, false, null, null, null, true
+                    );
+
+                    // Show notification
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        text-align: center; padding: 8px;
+                        color: #667eea; font-size: 12px; font-style: italic;
+                    `;
+                    notification.textContent = `✨ Last ${messagesSummarized} messages summarized`;
+                    chatContainer.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
+                }
+
+                const assistantMessage = data.content;
+                const executionTime = data.execution_time_ms;
+                const usage = data.usage || null;
+                const finishReason = data.finish_reason || null;
+                const shouldFormatJson = format === 'json';
+
+                // Add the assistant's message
+                addMessage(assistantMessage, false, shouldFormatJson, executionTime, usage, finishReason);
+            } catch (error) {
+                hideLoading();
+                showError(error.message);
+            } finally {
+                sendButton.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // Conversation management functions
+        async function loadConversations() {
+            try {
+                const response = await fetch('/api/conversations');
+                conversations = await response.json();
+                renderConversations();
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+
+        function renderConversations() {
+            conversationsList.innerHTML = '';
+            conversations.forEach(conv => {
+                const item = document.createElement('div');
+                item.className = `conversation-item ${conv.id === currentConversationId ? 'active' : ''}`;
+                item.onclick = () => loadConversation(conv.id);
+
+                const title = document.createElement('div');
+                title.className = 'conversation-title';
+                title.textContent = conv.title;
+
+                const meta = document.createElement('div');
+                meta.className = 'conversation-meta';
+                meta.textContent = `${conv.provider} - ${new Date(conv.updatedAt).toLocaleDateString()}`;
+
+                item.appendChild(title);
+                item.appendChild(meta);
+                conversationsList.appendChild(item);
+            });
+        }
+
+        async function createNewConversation() {
+            const title = prompt('Enter conversation title:', 'New Conversation');
+            if (!title) return;
+
+            const provider = providerSelect.value;
+            const model = modelInput.value;
+
+            try {
+                const response = await fetch('/api/conversations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, provider, model })
+                });
+
+                const conversation = await response.json();
+                currentConversationId = conversation.id;
+                chatContainer.innerHTML = '';
+                await loadConversations();
+            } catch (error) {
+                console.error('Error creating conversation:', error);
+                showError('Failed to create conversation');
+            }
+        }
+
+        async function loadConversation(id) {
+            try {
+                const response = await fetch(`/api/conversations/${id}`);
+                const conversation = await response.json();
+
+                currentConversationId = id;
+                chatContainer.innerHTML = '';
+
+                // Update provider and model
+                providerSelect.value = conversation.provider;
+                modelInput.value = conversation.model;
+                handleProviderChange();
+
+                // Restore history to session
+                try {
+                    await fetch('/api/chat/restore-history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            conversationId: id,
+                            provider: conversation.provider
+                        })
+                    });
+                } catch (error) {
+                    console.error('Error restoring history:', error);
+                }
+
+                // Load messages
+                conversation.messages.forEach(msg => {
+                    const isUser = msg.role === 'user';
+                    const usage = msg.promptTokens ? {
+                        prompt_tokens: msg.promptTokens,
+                        completion_tokens: msg.completionTokens,
+                        total_tokens: msg.totalTokens
+                    } : null;
+
+                    addMessage(
+                        msg.content,
+                        isUser,
+                        false,
+                        msg.executionTimeMs,
+                        usage,
+                        msg.finishReason,
+                        msg.isSummary
+                    );
+                });
+
+                renderConversations();
+            } catch (error) {
+                console.error('Error loading conversation:', error);
+                showError('Failed to load conversation');
+            }
+        }
+
+        // ========== MCP TAB MANAGEMENT ==========
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+            });
+
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            const selectedTab = document.getElementById(tabName + 'Tab');
+            selectedTab.classList.add('active');
+            selectedTab.style.display = 'flex';
+
+            // Activate button
+            event.target.classList.add('active');
+
+            // Show/hide chat controls
+            const chatControls = document.getElementById('chatControls');
+            if (tabName === 'chat') {
+                chatControls.style.display = 'block';
+            } else {
+                chatControls.style.display = 'none';
+            }
+
+            // Load MCP data if switching to MCP tab
+            if (tabName === 'mcp') {
+                loadMcpServers();
+                loadMcpTools();
+            }
+        }
+
+        // ========== MCP SERVER MANAGEMENT ==========
+        async function loadMcpServers() {
+            try {
+                const response = await fetch('/api/mcp/servers', {
+                    credentials: 'include'
+                });
+                const servers = await response.json();
+                renderServersList(servers);
+            } catch (error) {
+                console.error('Failed to load servers:', error);
+            }
+        }
+
+        function renderServersList(servers) {
+            const list = document.getElementById('mcpServersList');
+            if (!servers || servers.length === 0) {
+                list.innerHTML = '<div style="color: #999; font-size: 13px; padding: 10px;">No servers configured</div>';
+                return;
+            }
+
+            list.innerHTML = servers.map(server => `
+                <div class="server-item" data-id="${server.id}">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong>${server.name}</strong>
+                            <div style="font-size: 12px; color: #666; margin-top: 4px;">${server.url}</div>
+                        </div>
+                        <button onclick="removeServer('${server.id}', event)" style="color: #dc3545;">❌</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showAddServerModal() {
+            document.getElementById('addServerModal').style.display = 'flex';
+        }
+
+        function hideAddServerModal() {
+            document.getElementById('addServerModal').style.display = 'none';
+            document.getElementById('addServerForm').reset();
+        }
+
+        async function addServer(event) {
+            event.preventDefault();
+
+            const config = {
+                name: document.getElementById('serverName').value,
+                url: document.getElementById('serverUrl').value,
+                headers: {}
+            };
+
+            const apiKey = document.getElementById('serverApiKey').value;
+            if (apiKey) {
+                config.headers['Authorization'] = `Bearer ${apiKey}`;
+            }
+
+            try {
+                const response = await fetch('/api/mcp/servers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(config)
+                });
+
+                if (response.ok) {
+                    hideAddServerModal();
+                    loadMcpServers();
+                    loadMcpTools();
+                } else {
+                    alert('Failed to add server. Please check the server URL and try again.');
+                }
+            } catch (error) {
+                console.error('Failed to add server:', error);
+                alert('Failed to add server: ' + error.message);
+            }
+        }
+
+        async function removeServer(serverId, event) {
+            event.stopPropagation();
+
+            if (!confirm('Remove this server?')) return;
+
+            try {
+                await fetch(`/api/mcp/servers/${serverId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                loadMcpServers();
+                loadMcpTools();
+            } catch (error) {
+                console.error('Failed to remove server:', error);
+                alert('Failed to remove server: ' + error.message);
+            }
+        }
+
+        // ========== MCP TOOL MANAGEMENT ==========
+        let currentTools = [];
+        let selectedTool = null;
+
+        async function loadMcpTools() {
+            try {
+                const response = await fetch('/api/mcp/tools', {
+                    credentials: 'include'
+                });
+                currentTools = await response.json();
+                renderToolsList(currentTools);
+            } catch (error) {
+                console.error('Failed to load tools:', error);
+            }
+        }
+
+        function renderToolsList(tools) {
+            const list = document.getElementById('mcpToolsList');
+            if (!tools || tools.length === 0) {
+                list.innerHTML = '<div style="color: #999; font-size: 13px; padding: 10px;">No tools available</div>';
+                return;
+            }
+
+            list.innerHTML = tools.map(tool => `
+                <div class="tool-item" onclick="selectTool('${tool.name}')">
+                    <strong>${tool.name}</strong>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">${tool.description || 'No description'}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectTool(toolName) {
+            selectedTool = currentTools.find(t => t.name === toolName);
+            if (!selectedTool) return;
+
+            // Update active state
+            document.querySelectorAll('.tool-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.tool-item').classList.add('active');
+
+            renderToolDetails(selectedTool);
+        }
+
+        function renderToolDetails(tool) {
+            const detailsDiv = document.getElementById('mcpToolDetails');
+
+            // Generate form from JSON Schema
+            const schema = tool.inputSchema || {};
+            const properties = schema.properties || {};
+            const required = schema.required || [];
+
+            let formHtml = `
+                <div class="tool-detail">
+                    <h2>${tool.name}</h2>
+                    <p>${tool.description || 'No description available'}</p>
+                    <form id="toolExecutionForm" onsubmit="executeTool(event)">
+            `;
+
+            if (Object.keys(properties).length > 0) {
+                for (const [paramName, paramSchema] of Object.entries(properties)) {
+                    const isRequired = required.includes(paramName);
+
+                    formHtml += `
+                        <div class="tool-param">
+                            <label>${paramName}${isRequired ? ' *' : ''}</label>
+                            ${generateInput(paramName, paramSchema, isRequired)}
+                        </div>
+                    `;
+                }
+            } else {
+                formHtml += '<p style="color: #999; font-style: italic;">This tool requires no parameters</p>';
+            }
+
+            formHtml += `
+                        <button type="submit">Execute Tool</button>
+                    </form>
+                    <div id="toolResult"></div>
+                </div>
+            `;
+
+            detailsDiv.innerHTML = formHtml;
+        }
+
+        function generateInput(name, schema, required) {
+            const type = schema.type || 'string';
+            const description = schema.description || '';
+
+            switch (type) {
+                case 'string':
+                    return `<input type="text" name="${name}" ${required ? 'required' : ''} placeholder="${description}">`;
+                case 'number':
+                case 'integer':
+                    return `<input type="number" name="${name}" ${required ? 'required' : ''} placeholder="${description}">`;
+                case 'boolean':
+                    return `<input type="checkbox" name="${name}" style="width: auto;">`;
+                case 'object':
+                case 'array':
+                    return `<textarea name="${name}" ${required ? 'required' : ''} placeholder="${description || 'Enter JSON'}" rows="4"></textarea>`;
+                default:
+                    return `<textarea name="${name}" ${required ? 'required' : ''} placeholder="${description}"></textarea>`;
+            }
+        }
+
+        async function executeTool(event) {
+            event.preventDefault();
+
+            if (!selectedTool) return;
+
+            const formData = new FormData(event.target);
+            const arguments = {};
+
+            for (const [key, value] of formData.entries()) {
+                // Try to parse as JSON for object/array types
+                const paramSchema = selectedTool.inputSchema?.properties?.[key];
+                if (paramSchema && (paramSchema.type === 'object' || paramSchema.type === 'array')) {
+                    try {
+                        arguments[key] = JSON.parse(value);
+                    } catch (e) {
+                        arguments[key] = value;
+                    }
+                } else if (paramSchema && paramSchema.type === 'boolean') {
+                    arguments[key] = value === 'on';
+                } else if (paramSchema && (paramSchema.type === 'number' || paramSchema.type === 'integer')) {
+                    arguments[key] = Number(value);
+                } else {
+                    arguments[key] = value;
+                }
+            }
+
+            const request = {
+                serverId: selectedTool.serverId,
+                toolName: selectedTool.name,
+                arguments: arguments
+            };
+
+            // Show loading
+            const resultDiv = document.getElementById('toolResult');
+            resultDiv.innerHTML = `
+                <div class="tool-result" style="background: #f0f0f0; color: #666;">
+                    <div class="loading-dots">
+                        <span>Executing</span>
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/mcp/tools/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(request)
+                });
+
+                const result = await response.json();
+                displayToolResult(result);
+            } catch (error) {
+                console.error('Tool execution failed:', error);
+                displayToolResult({ success: false, error: error.message });
+            }
+        }
+
+        function displayToolResult(result) {
+            const resultDiv = document.getElementById('toolResult');
+
+            if (result.success) {
+                let contentStr = '';
+                try {
+                    contentStr = JSON.stringify(result.content, null, 2);
+                } catch (e) {
+                    contentStr = String(result.content);
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="tool-result" style="background: #d4edda; border-left: 4px solid #28a745;">
+                        <strong>✓ Success</strong> (${result.executionTimeMs}ms)
+                        <pre style="margin-top: 10px; white-space: pre-wrap;">${contentStr}</pre>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="tool-result" style="background: #f8d7da; border-left: 4px solid #dc3545;">
+                        <strong>✗ Error:</strong> ${result.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize form submit handler for add server modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('addServerForm');
+            if (form) {
+                form.addEventListener('submit', addServer);
+            }
+        });
+
+        // Initialize provider UI on load
+        handleProviderChange();
+        loadConversations();
+        messageInput.focus();
+    </script>
+</body>
+</html>

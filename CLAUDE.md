@@ -21,42 +21,53 @@ The application features a web interface for chat interactions with various AI m
 
 ## Project Structure
 
+This is a multi-module Gradle project:
+
 ```
-src/
-├── main/
-│   ├── java/com/aiexploration/perplexity/
-│   │   ├── AiExplorationApplication.java    # Main Spring Boot application
-│   │   ├── config/
-│   │   │   └── PerplexityConfig.java        # API configuration
-│   │   ├── controller/
-│   │   │   ├── ChatController.java          # REST API endpoints
-│   │   │   └── WebController.java           # Web page controller
-│   │   ├── model/
-│   │   │   ├── PerplexityRequest.java       # Request DTOs
-│   │   │   └── PerplexityResponse.java      # Response DTOs
-│   │   └── service/
-│   │       └── PerplexityService.java       # Perplexity API client
-│   └── resources/
-│       ├── application.properties            # Application configuration
-│       └── templates/
-│           └── index.html                    # Web interface
-└── test/
-    └── java/com/aiexploration/perplexity/   # Test directory
+ai-exploration/
+├── ai-exploration-app/                      # Main web application
+│   └── src/main/java/com/aiexploration/chat/
+│       ├── AiExplorationApplication.java    # Main Spring Boot application
+│       ├── config/                          # Configuration classes
+│       ├── controller/                      # REST API endpoints
+│       ├── model/                           # Data models
+│       ├── repository/                      # Database repositories
+│       └── service/                         # Business logic services
+│
+└── mcp-weather-server/                      # MCP server for Weather API (Open-Meteo)
+    └── src/main/java/com/aiexploration/mcp/weather/
+        ├── McpWeatherApplication.java       # MCP server application
+        ├── config/                          # MCP server configuration
+        ├── controller/                      # MCP JSON-RPC endpoint
+        ├── model/                           # Weather and MCP protocol models
+        ├── service/                         # Open-Meteo client & tool handlers
+        └── util/                            # Weather code utilities
 ```
 
 ## Build and Development
 
 ### Build the project
 ```bash
+# Build all modules
 ./gradlew build
+
+# Build specific module
+./gradlew :ai-exploration-app:build
+./gradlew :mcp-weather-server:build
 ```
 
-### Run the application locally
+### Run the applications
+
 ```bash
-./gradlew bootRun
+# Run main application (port 8080)
+./gradlew :ai-exploration-app:bootRun
+
+# Run MCP Weather server (port 8081)
+./gradlew :mcp-weather-server:bootRun
 ```
 
-The application will start on http://localhost:8080
+The main application will start on http://localhost:8080
+The MCP server will start on http://localhost:8081
 
 ### Run tests
 ```bash
