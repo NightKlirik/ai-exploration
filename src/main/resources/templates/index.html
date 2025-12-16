@@ -369,6 +369,270 @@
             background: rgba(255, 255, 255, 0.3);
             border-color: white;
         }
+
+        /* Tab Navigation Styles */
+        .tab-navigation {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0 10px 0;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* MCP Layout Styles */
+        .mcp-container {
+            display: flex;
+            gap: 20px;
+            height: 100%;
+            padding: 20px;
+            background: #f7f8fa;
+            overflow: hidden;
+        }
+
+        .mcp-sidebar {
+            width: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .mcp-main {
+            flex: 1;
+            overflow-y: auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .mcp-section {
+            margin-bottom: 30px;
+        }
+
+        .mcp-section h3 {
+            margin-bottom: 12px;
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Server & Tool Item Styles */
+        .server-item, .tool-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+
+        .server-item:hover, .tool-item:hover {
+            background: #f0f0f0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .server-item.active, .tool-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .server-item button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+        }
+
+        /* Buttons */
+        .add-server-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .add-server-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .modal-content input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-content button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-content button[type="submit"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Tool Details Styles */
+        .tool-detail {
+            background: white;
+            border-radius: 12px;
+        }
+
+        .tool-detail h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .tool-detail p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .tool-param {
+            margin-bottom: 16px;
+        }
+
+        .tool-param label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .tool-param input,
+        .tool-param textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .tool-param input:focus,
+        .tool-param textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tool-param textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .tool-result {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f7f8fa;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+            border-left: 4px solid #667eea;
+        }
+
+        .tool-detail form button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .tool-detail form button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -385,7 +649,14 @@
         <div class="container">
             <div class="header">
             <h1 id="headerTitle">AI Chat</h1>
-            <div class="model-selector">
+
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" onclick="switchTab('chat')">Chat</button>
+                <button class="tab-btn" onclick="switchTab('mcp')">MCP Tools</button>
+            </div>
+
+            <div class="model-selector" id="chatControls">
                 <label for="provider">Provider: </label>
                 <select id="provider" onchange="handleProviderChange()">
                     <option value="openai">OpenAI</option>
@@ -417,17 +688,59 @@
             </div>
         </div>
 
-        <div class="chat-container" id="chatContainer"></div>
+        <!-- Chat Tab -->
+        <div id="chatTab" class="tab-content active">
+            <div class="chat-container" id="chatContainer"></div>
 
-        <div class="input-container">
-            <textarea
-                id="messageInput"
-                placeholder="Ask me anything..."
-                rows="2"
-                onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"
-            ></textarea>
-            <button onclick="sendMessage()" id="sendButton">Send</button>
+            <div class="input-container">
+                <textarea
+                    id="messageInput"
+                    placeholder="Ask me anything..."
+                    rows="2"
+                    onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"
+                ></textarea>
+                <button onclick="sendMessage()" id="sendButton">Send</button>
+            </div>
         </div>
+
+        <!-- MCP Tab -->
+        <div id="mcpTab" class="tab-content" style="display: none;">
+            <div class="mcp-container">
+                <div class="mcp-sidebar">
+                    <div class="mcp-section">
+                        <h3>MCP Servers</h3>
+                        <div id="mcpServersList"></div>
+                        <button class="add-server-btn" onclick="showAddServerModal()">+ Add Server</button>
+                    </div>
+                    <div class="mcp-section">
+                        <h3>Available Tools</h3>
+                        <div id="mcpToolsList"></div>
+                    </div>
+                </div>
+                <div class="mcp-main">
+                    <div id="mcpToolDetails">
+                        <p>Select a tool to view details and execute</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        </div>
+    </div>
+
+    <!-- Add Server Modal -->
+    <div id="addServerModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Add MCP Server</h3>
+            <form id="addServerForm">
+                <input type="text" id="serverName" placeholder="Server Name" required>
+                <input type="url" id="serverUrl" placeholder="http://localhost:8081" required>
+                <input type="text" id="serverApiKey" placeholder="API Key (optional)">
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="submit" style="flex: 1;">Add</button>
+                    <button type="button" onclick="hideAddServerModal()" style="flex: 1; background: #999;">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -955,6 +1268,334 @@
                 showError('Failed to load conversation');
             }
         }
+
+        // ========== MCP TAB MANAGEMENT ==========
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+            });
+
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            const selectedTab = document.getElementById(tabName + 'Tab');
+            selectedTab.classList.add('active');
+            selectedTab.style.display = 'flex';
+
+            // Activate button
+            event.target.classList.add('active');
+
+            // Show/hide chat controls
+            const chatControls = document.getElementById('chatControls');
+            if (tabName === 'chat') {
+                chatControls.style.display = 'block';
+            } else {
+                chatControls.style.display = 'none';
+            }
+
+            // Load MCP data if switching to MCP tab
+            if (tabName === 'mcp') {
+                loadMcpServers();
+                loadMcpTools();
+            }
+        }
+
+        // ========== MCP SERVER MANAGEMENT ==========
+        async function loadMcpServers() {
+            try {
+                const response = await fetch('/api/mcp/servers', {
+                    credentials: 'include'
+                });
+                const servers = await response.json();
+                renderServersList(servers);
+            } catch (error) {
+                console.error('Failed to load servers:', error);
+            }
+        }
+
+        function renderServersList(servers) {
+            const list = document.getElementById('mcpServersList');
+            if (!servers || servers.length === 0) {
+                list.innerHTML = '<div style="color: #999; font-size: 13px; padding: 10px;">No servers configured</div>';
+                return;
+            }
+
+            list.innerHTML = servers.map(server => `
+                <div class="server-item" data-id="${server.id}">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong>${server.name}</strong>
+                            <div style="font-size: 12px; color: #666; margin-top: 4px;">${server.url}</div>
+                        </div>
+                        <button onclick="removeServer('${server.id}', event)" style="color: #dc3545;">❌</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showAddServerModal() {
+            document.getElementById('addServerModal').style.display = 'flex';
+        }
+
+        function hideAddServerModal() {
+            document.getElementById('addServerModal').style.display = 'none';
+            document.getElementById('addServerForm').reset();
+        }
+
+        async function addServer(event) {
+            event.preventDefault();
+
+            const config = {
+                name: document.getElementById('serverName').value,
+                url: document.getElementById('serverUrl').value,
+                headers: {}
+            };
+
+            const apiKey = document.getElementById('serverApiKey').value;
+            if (apiKey) {
+                config.headers['Authorization'] = `Bearer ${apiKey}`;
+            }
+
+            try {
+                const response = await fetch('/api/mcp/servers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(config)
+                });
+
+                if (response.ok) {
+                    hideAddServerModal();
+                    loadMcpServers();
+                    loadMcpTools();
+                } else {
+                    alert('Failed to add server. Please check the server URL and try again.');
+                }
+            } catch (error) {
+                console.error('Failed to add server:', error);
+                alert('Failed to add server: ' + error.message);
+            }
+        }
+
+        async function removeServer(serverId, event) {
+            event.stopPropagation();
+
+            if (!confirm('Remove this server?')) return;
+
+            try {
+                await fetch(`/api/mcp/servers/${serverId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                loadMcpServers();
+                loadMcpTools();
+            } catch (error) {
+                console.error('Failed to remove server:', error);
+                alert('Failed to remove server: ' + error.message);
+            }
+        }
+
+        // ========== MCP TOOL MANAGEMENT ==========
+        let currentTools = [];
+        let selectedTool = null;
+
+        async function loadMcpTools() {
+            try {
+                const response = await fetch('/api/mcp/tools', {
+                    credentials: 'include'
+                });
+                currentTools = await response.json();
+                renderToolsList(currentTools);
+            } catch (error) {
+                console.error('Failed to load tools:', error);
+            }
+        }
+
+        function renderToolsList(tools) {
+            const list = document.getElementById('mcpToolsList');
+            if (!tools || tools.length === 0) {
+                list.innerHTML = '<div style="color: #999; font-size: 13px; padding: 10px;">No tools available</div>';
+                return;
+            }
+
+            list.innerHTML = tools.map(tool => `
+                <div class="tool-item" onclick="selectTool('${tool.name}')">
+                    <strong>${tool.name}</strong>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">${tool.description || 'No description'}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectTool(toolName) {
+            selectedTool = currentTools.find(t => t.name === toolName);
+            if (!selectedTool) return;
+
+            // Update active state
+            document.querySelectorAll('.tool-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.tool-item').classList.add('active');
+
+            renderToolDetails(selectedTool);
+        }
+
+        function renderToolDetails(tool) {
+            const detailsDiv = document.getElementById('mcpToolDetails');
+
+            // Generate form from JSON Schema
+            const schema = tool.inputSchema || {};
+            const properties = schema.properties || {};
+            const required = schema.required || [];
+
+            let formHtml = `
+                <div class="tool-detail">
+                    <h2>${tool.name}</h2>
+                    <p>${tool.description || 'No description available'}</p>
+                    <form id="toolExecutionForm" onsubmit="executeTool(event)">
+            `;
+
+            if (Object.keys(properties).length > 0) {
+                for (const [paramName, paramSchema] of Object.entries(properties)) {
+                    const isRequired = required.includes(paramName);
+
+                    formHtml += `
+                        <div class="tool-param">
+                            <label>${paramName}${isRequired ? ' *' : ''}</label>
+                            ${generateInput(paramName, paramSchema, isRequired)}
+                        </div>
+                    `;
+                }
+            } else {
+                formHtml += '<p style="color: #999; font-style: italic;">This tool requires no parameters</p>';
+            }
+
+            formHtml += `
+                        <button type="submit">Execute Tool</button>
+                    </form>
+                    <div id="toolResult"></div>
+                </div>
+            `;
+
+            detailsDiv.innerHTML = formHtml;
+        }
+
+        function generateInput(name, schema, required) {
+            const type = schema.type || 'string';
+            const description = schema.description || '';
+
+            switch (type) {
+                case 'string':
+                    return `<input type="text" name="${name}" ${required ? 'required' : ''} placeholder="${description}">`;
+                case 'number':
+                case 'integer':
+                    return `<input type="number" name="${name}" ${required ? 'required' : ''} placeholder="${description}">`;
+                case 'boolean':
+                    return `<input type="checkbox" name="${name}" style="width: auto;">`;
+                case 'object':
+                case 'array':
+                    return `<textarea name="${name}" ${required ? 'required' : ''} placeholder="${description || 'Enter JSON'}" rows="4"></textarea>`;
+                default:
+                    return `<textarea name="${name}" ${required ? 'required' : ''} placeholder="${description}"></textarea>`;
+            }
+        }
+
+        async function executeTool(event) {
+            event.preventDefault();
+
+            if (!selectedTool) return;
+
+            const formData = new FormData(event.target);
+            const arguments = {};
+
+            for (const [key, value] of formData.entries()) {
+                // Try to parse as JSON for object/array types
+                const paramSchema = selectedTool.inputSchema?.properties?.[key];
+                if (paramSchema && (paramSchema.type === 'object' || paramSchema.type === 'array')) {
+                    try {
+                        arguments[key] = JSON.parse(value);
+                    } catch (e) {
+                        arguments[key] = value;
+                    }
+                } else if (paramSchema && paramSchema.type === 'boolean') {
+                    arguments[key] = value === 'on';
+                } else if (paramSchema && (paramSchema.type === 'number' || paramSchema.type === 'integer')) {
+                    arguments[key] = Number(value);
+                } else {
+                    arguments[key] = value;
+                }
+            }
+
+            const request = {
+                serverId: selectedTool.serverId,
+                toolName: selectedTool.name,
+                arguments: arguments
+            };
+
+            // Show loading
+            const resultDiv = document.getElementById('toolResult');
+            resultDiv.innerHTML = `
+                <div class="tool-result" style="background: #f0f0f0; color: #666;">
+                    <div class="loading-dots">
+                        <span>Executing</span>
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/mcp/tools/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(request)
+                });
+
+                const result = await response.json();
+                displayToolResult(result);
+            } catch (error) {
+                console.error('Tool execution failed:', error);
+                displayToolResult({ success: false, error: error.message });
+            }
+        }
+
+        function displayToolResult(result) {
+            const resultDiv = document.getElementById('toolResult');
+
+            if (result.success) {
+                let contentStr = '';
+                try {
+                    contentStr = JSON.stringify(result.content, null, 2);
+                } catch (e) {
+                    contentStr = String(result.content);
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="tool-result" style="background: #d4edda; border-left: 4px solid #28a745;">
+                        <strong>✓ Success</strong> (${result.executionTimeMs}ms)
+                        <pre style="margin-top: 10px; white-space: pre-wrap;">${contentStr}</pre>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="tool-result" style="background: #f8d7da; border-left: 4px solid #dc3545;">
+                        <strong>✗ Error:</strong> ${result.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize form submit handler for add server modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('addServerForm');
+            if (form) {
+                form.addEventListener('submit', addServer);
+            }
+        });
 
         // Initialize provider UI on load
         handleProviderChange();

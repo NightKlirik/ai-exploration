@@ -44,6 +44,7 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-starter-model-deepseek'
     implementation 'org.springframework.ai:spring-ai-starter-model-huggingface'
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.springframework.ai:spring-ai-mcp-client-spring-boot-starter:1.0.0-M6'
     implementation 'io.projectreactor.netty:reactor-netty:1.1.13'
 
     // Spring test (for MockHttpSession)
